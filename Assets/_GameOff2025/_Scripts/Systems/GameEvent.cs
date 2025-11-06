@@ -1,3 +1,5 @@
+using Route24.GameOff;
+
 namespace Route24.Core
 {
     // ───────────────────────────────
@@ -25,34 +27,59 @@ namespace Route24.Core
     }
 
     // ───────────────────────────────
-    // Player-related events
+    // Game-related events
     // ───────────────────────────────
-    public struct PlayerDiedEvent { }
-
-    // ───────────────────────────────
-    // Enemy-related events
-    // ───────────────────────────────
-    public struct EnemyKilledEvent
+    public struct ShipArrivedForInspectionEvent
     {
-        public int EnemyID;
-        public EnemyKilledEvent(int enemyId) => EnemyID = enemyId;
-    }
+        public int ShipIndex;
+        public ShipProfile Ship;
 
-    // ───────────────────────────────
-    // Level-related events
-    // ───────────────────────────────
-    public struct LevelCompletedEvent
-    {
-        public int LevelIndex;
-        public LevelCompletedEvent(int levelIndex)
+        public ShipArrivedForInspectionEvent(int shipIndex, ShipProfile ship)
         {
-            LevelIndex = levelIndex;
+            ShipIndex = shipIndex;
+            Ship = ship;
+        }
+    }
+    
+    public struct InspectionStartedEvent
+    {
+        public ShipProfile Ship;
+        public InspectionStartedEvent(ShipProfile ship)
+        {
+            Ship = ship;
         }
     }
 
+    public struct InspectionCompletedEvent
+    {
+        public bool Approved;
+        public bool TimedOut;
+        public ShipProfile Ship;
+
+        public InspectionCompletedEvent(bool approved, bool timedOut, ShipProfile ship)
+        {
+            Approved = approved;
+            TimedOut = timedOut;
+            Ship = ship;
+        }
+    }
+
+    public struct DayStartedEvent
+    {
+        public int Day;
+        public DayStartedEvent(int day) => Day = day;
+    }
+
+    public struct DayEndedEvent
+    {
+        public int Day;
+        public DayEndedEvent(int day) => Day = day;
+    }
+    
     // ───────────────────────────────
-    // Game-related events
+    // Generic events
     // ───────────────────────────────
+    
     public struct GamePausedEvent
     {
         public bool IsPaused;

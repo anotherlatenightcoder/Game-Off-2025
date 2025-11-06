@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Route24.Core
 {
@@ -15,6 +16,9 @@ namespace Route24.Core
 
         [Tooltip("List of core prefab systems to load")]
         [SerializeField] private List<GameObject> _managerPrefabs;
+        
+        [Tooltip("Skips scene loading when already in a non-bootstrap scene (for prototyping)")]
+        [SerializeField] private bool _skipSceneLoadIfAlreadyActive = true;
         
         private static bool _initialized = false;
         private readonly List<GameObject> _managers = new List<GameObject>();
@@ -75,10 +79,22 @@ namespace Route24.Core
             initOrderManager.InitializeAll();
 
             Debug.Log("[Bootstrapper] Core systems initialized in priority order.");
+
+            var sceneInitializer = FindFirstObjectByType<SceneObjectInitializer>();
+            sceneInitializer?.InitializeAllSceneObjects();
         }
         
         private void LoadInitialScene()
         {
+            var activeScene = SceneManager.GetActiveScene();
+            if (_skipSceneLoadIfAlreadyActive && 
+                !string.IsNullOrEmpty(activeScene.name) && 
+                activeScene.name != "_Persistent")
+            {
+                Debug.Log($"[Bootstrapper] Already in scene '{activeScene.name}', skipping initial scene load.");
+                return;
+            }
+            
             var loadingManager = ServiceLocator.Get<LoadingManager>();
             
             if (loadingManager != null)
