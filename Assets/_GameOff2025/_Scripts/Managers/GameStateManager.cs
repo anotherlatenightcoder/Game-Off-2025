@@ -4,7 +4,7 @@ namespace Route24.Core
 {
     public class GameStateManager : MonoBehaviour, IService, IInitializable
     {
-        public int InitializationPriority => 100;
+        public int InitializationPriority => 90;
         
         private EventHub _eventHub;
         
