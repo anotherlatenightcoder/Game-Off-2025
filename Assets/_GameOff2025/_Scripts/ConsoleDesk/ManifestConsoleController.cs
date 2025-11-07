@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Route24.Core;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 namespace Route24.GameOff
@@ -12,18 +13,25 @@ namespace Route24.GameOff
     {
         [Header("UI References")]
         [SerializeField] private RectTransform _highlightBar;
+        [SerializeField] private Image _highlightBackground;
+        [SerializeField] private Image _scanProgress;
         [SerializeField] private Transform _shipListContainer;
         [SerializeField] private Transform _bannedListContainer;
-        [SerializeField] private GameObject _cargoEntryPrefab; // Simple TMPro entry
+        [SerializeField] private GameObject _cargoEntryPrefab;
 
         [Header("Scan Settings")]
         [SerializeField] private float _scanRevealDelay = 1f;
+        [SerializeField] private Color _defaultColor = new(1f, 1f, 1f, 0f);
+        [SerializeField] private Color _safeColor = Color.green;
+        [SerializeField] private Color _bannedColor = Color.red;
+        [SerializeField] private Color _scanColor = Color.cyan;
 
         private List<CargoEntryUI> _shipEntries = new();
         private List<string> _bannedItems = new();
         private int _currentIndex = 0;
         private bool _inFocus = false;
         private bool _recentlyExited = false;
+        private bool _isScanning = false;
         private float _exitCooldown = 0.5f;
         private GameManager _gameManager;
         private EventHub _eventHub;
@@ -38,6 +46,18 @@ namespace Route24.GameOff
             _gameManager = ServiceLocator.Get<GameManager>();
 
             _eventHub.Subscribe<ShipArrivedForInspectionEvent>(OnShipArrived);
+            
+            if (_highlightBar)
+                _highlightBar.gameObject.SetActive(false);
+
+            if (_scanProgress)
+            {
+                _scanProgress.fillAmount = 0f;
+                _scanProgress.gameObject.SetActive(false);
+            }
+
+            if (_highlightBackground)
+                _highlightBackground.color = _defaultColor;
         }
 
         private void Update()
@@ -107,6 +127,9 @@ namespace Route24.GameOff
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             if (scroll > 0f) ChangeSelection(-1);
             else if (scroll < 0f) ChangeSelection(1);
+            
+            if (Input.GetKeyDown(KeyCode.Space))
+                ScanCurrent();
 
             if (Input.GetKeyDown(KeyCode.E)) ExitFocus();
         }
@@ -120,9 +143,7 @@ namespace Route24.GameOff
         private void UpdateHighlight()
         {
             if (_highlightBar && _currentIndex < _shipEntries.Count)
-            {
                 _highlightBar.position = _shipEntries[_currentIndex].transform.position;
-            }
         }
 
         private void ScanCurrent()
@@ -131,7 +152,65 @@ namespace Route24.GameOff
             var entry = _shipEntries[_currentIndex];
             if (entry.IsScanned) return;
 
-            StartCoroutine(entry.ScanReveal(_scanRevealDelay, _bannedItems));
+            StartCoroutine(ScanRoutine(entry));
+        }
+        
+        private IEnumerator ScanRoutine(CargoEntryUI entry)
+        {
+            _isScanning = true;
+
+            // Set up visuals
+            if (_scanProgress)
+            {
+                _scanProgress.fillAmount = 0f;
+                _scanProgress.color = _scanColor;
+                _scanProgress.gameObject.SetActive(true);
+            }
+
+            if (_highlightBackground)
+                _highlightBackground.color = _scanColor;
+
+            // Fill animation
+            float elapsed = 0f;
+            while (elapsed < _scanRevealDelay)
+            {
+                elapsed += Time.deltaTime;
+                if (_scanProgress)
+                    _scanProgress.fillAmount = Mathf.Clamp01(elapsed / _scanRevealDelay);
+                yield return null;
+            }
+
+            // Perform the reveal
+            bool isBanned = _bannedItems.Contains(entry.ActualName);
+            yield return entry.ScanReveal(0f, _bannedItems);
+
+            // Flash background color
+            Color flashColor = isBanned ? _bannedColor : _safeColor;
+            yield return FlashBackground(flashColor);
+
+            if (_scanProgress)
+                _scanProgress.gameObject.SetActive(false);
+
+            if (_highlightBackground)
+                _highlightBackground.color = _defaultColor;
+
+            _isScanning = false;
+        }
+
+        private IEnumerator FlashBackground(Color flashColor)
+        {
+            float duration = 0.4f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.PingPong(elapsed * 6f, 1f);
+                _highlightBackground.color = Color.Lerp(_defaultColor, flashColor, t);
+                yield return null;
+            }
+
+            _highlightBackground.color = _defaultColor;
         }
 
         // ─────────────────────────────────────────────
@@ -143,9 +222,20 @@ namespace Route24.GameOff
             GameManager.SetFocusMode(true);
             _cameraController.FocusOn(transform);
 
-            // Unlock cursor for UI interaction
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            if (_highlightBar)
+            {
+                Debug.Log("[ManifestConsole] Enabling highlight bar");
+                _highlightBar.gameObject.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("[ManifestConsole] Highlight bar is null!");
+            }
+
+            UpdateHighlight();
         }
 
         public void ExitFocus()
@@ -158,6 +248,9 @@ namespace Route24.GameOff
             // Restore normal look
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+            
+            if (_highlightBar)
+                _highlightBar.gameObject.SetActive(false);
             
             StartCoroutine(ExitCooldownRoutine());
         }

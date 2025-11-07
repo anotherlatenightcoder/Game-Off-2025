@@ -13,6 +13,7 @@ namespace Route24.GameOff
         [SerializeField] private Color _bannedColor = Color.red;
 
         public bool IsScanned { get; private set; }
+        public string ActualName => _actualName;
         private string _actualName;
 
         public void Initialize(string displayName, string actualName)
