@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Route24.GameOff;
 
 namespace Route24.Core
@@ -63,6 +64,23 @@ namespace Route24.Core
             Ship = ship;
         }
     }
+    
+    public struct BannedCargoGeneratedEvent
+    {
+        public IReadOnlyList<CargoItem> BannedItems;
+        public int Day;
+
+        public BannedCargoGeneratedEvent(int day, IReadOnlyList<CargoItem> bannedItems)
+        {
+            Day = day;
+            BannedItems = bannedItems;
+        }
+    }
+
+    public struct BannedCargoClearedEvent { }
+
+    public struct LeverActivatedEvent { }
+    public struct LeverDeactivatedEvent { }
 
     public struct DayStartedEvent
     {

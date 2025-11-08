@@ -7,31 +7,31 @@ namespace Route24.GameOff
     {
         [Header("Camera Rotation")]
         [SerializeField] private float _mouseSensitivity = 3f;
-        [Tooltip("Left/Right Limits")]
         [SerializeField] private float _maxYaw = 45f;
-        [Tooltip("Up/Down Limits")]
         [SerializeField] private float _maxPitch = 25f;
 
         [Header("Focus Settings")]
         [SerializeField] private float _focusDuration = 0.6f;
-        [SerializeField] private float _focusDistance = -0.65f;
-        [SerializeField] private Vector3 _focusOffset = new Vector3(0f, 0.2f, 0f);
 
         private float _yaw;
         private float _pitch;
         private Vector3 _initialRotation;
 
-        // Focus state
         private Vector3 _defaultPosition;
         private Quaternion _defaultRotation;
+        private float _defaultFOV;
+
+        private Camera _cam;
         private bool _isFocusing = false;
         private Coroutine _focusRoutine;
 
         private void Start()
         {
+            _cam = GetComponent<Camera>();
             _initialRotation = transform.localEulerAngles;
             _defaultPosition = transform.position;
             _defaultRotation = transform.rotation;
+            _defaultFOV = _cam.fieldOfView;
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -62,26 +62,30 @@ namespace Route24.GameOff
         }
 
         // ───────────────────────────────
-        // Focus System
+        // Focus System (now with external anchor support)
         // ───────────────────────────────
-        public void FocusOn(Transform target)
+        public void FocusOn(Transform focusPoint, Transform lookTarget, float newFOV = 40f)
         {
             if (_focusRoutine != null)
                 StopCoroutine(_focusRoutine);
 
             _defaultPosition = transform.position;
             _defaultRotation = transform.rotation;
+            _defaultFOV = _cam.fieldOfView;
 
-            _focusRoutine = StartCoroutine(FocusRoutine(target));
+            _focusRoutine = StartCoroutine(FocusRoutine(focusPoint, lookTarget, newFOV));
         }
 
-        private IEnumerator FocusRoutine(Transform target)
+        private IEnumerator FocusRoutine(Transform focusPoint, Transform lookTarget, float newFOV)
         {
             _isFocusing = true;
 
-            Vector3 targetPos = transform.position + target.forward * _focusDistance + _focusOffset;
-            Quaternion targetRot = Quaternion.LookRotation(target.forward, Vector3.up);
-            targetRot *= Quaternion.Euler(35f, 0f, 0f);
+            Vector3 startPos = transform.position;
+            Quaternion startRot = transform.rotation;
+            float startFOV = _cam.fieldOfView;
+
+            Vector3 endPos = focusPoint.position;
+            Quaternion endRot = Quaternion.LookRotation(lookTarget.position - focusPoint.position, Vector3.up);
 
             float elapsed = 0f;
             while (elapsed < _focusDuration)
@@ -89,14 +93,16 @@ namespace Route24.GameOff
                 elapsed += Time.deltaTime;
                 float t = Mathf.SmoothStep(0, 1, elapsed / _focusDuration);
 
-                transform.position = Vector3.Lerp(_defaultPosition, targetPos, t);
-                transform.rotation = Quaternion.Slerp(_defaultRotation, targetRot, t);
+                transform.position = Vector3.Lerp(startPos, endPos, t);
+                transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+                _cam.fieldOfView = Mathf.Lerp(startFOV, newFOV, t);
 
                 yield return null;
             }
 
-            transform.position = targetPos;
-            transform.rotation = targetRot;
+            transform.position = endPos;
+            transform.rotation = endRot;
+            _cam.fieldOfView = newFOV;
         }
 
         public void ReturnToDefault()
@@ -111,8 +117,9 @@ namespace Route24.GameOff
         {
             Vector3 startPos = transform.position;
             Quaternion startRot = transform.rotation;
-            float elapsed = 0f;
+            float startFOV = _cam.fieldOfView;
 
+            float elapsed = 0f;
             while (elapsed < _focusDuration)
             {
                 elapsed += Time.deltaTime;
@@ -120,12 +127,14 @@ namespace Route24.GameOff
 
                 transform.position = Vector3.Lerp(startPos, _defaultPosition, t);
                 transform.rotation = Quaternion.Slerp(startRot, _defaultRotation, t);
+                _cam.fieldOfView = Mathf.Lerp(startFOV, _defaultFOV, t);
 
                 yield return null;
             }
 
             transform.position = _defaultPosition;
             transform.rotation = _defaultRotation;
+            _cam.fieldOfView = _defaultFOV;
             _isFocusing = false;
         }
 

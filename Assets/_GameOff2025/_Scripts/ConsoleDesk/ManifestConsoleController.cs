@@ -25,9 +25,18 @@ namespace Route24.GameOff
         [SerializeField] private Color _safeColor = Color.green;
         [SerializeField] private Color _bannedColor = Color.red;
         [SerializeField] private Color _scanColor = Color.cyan;
+        
+        [Header("Switches")]
+        [SerializeField] private LeverSwitchController _consoleLeverSwitch;
+        
+        [Header("Camera Settings")]
+        [SerializeField] private SeatedCameraController _cameraController;
+        [SerializeField] private Transform _cameraFocusPoint;
+        [SerializeField] private Transform _cameraLookTarget;
+        [SerializeField] private float _focusFOV = 40f;
 
         private List<CargoEntryUI> _shipEntries = new();
-        private List<string> _bannedItems = new();
+        private List<CargoItem> _bannedItems = new();
         private int _currentIndex = 0;
         private bool _inFocus = false;
         private bool _recentlyExited = false;
@@ -36,16 +45,20 @@ namespace Route24.GameOff
         private GameManager _gameManager;
         private EventHub _eventHub;
         private CargoManifestManager _manifestManager;
-        [SerializeField] private SeatedCameraController _cameraController;
+        private ShipProfile _currentShip;
         
-
         public void SceneInitialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _manifestManager = ServiceLocator.Get<CargoManifestManager>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<ShipArrivedForInspectionEvent>(OnShipArrived);
+            _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
+            _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            _eventHub.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionEnded);
+            _eventHub.Subscribe<BannedCargoGeneratedEvent>(OnBannedListGenerated);
+            _eventHub.Subscribe<BannedCargoClearedEvent>(OnBannedListCleared);
             
             if (_highlightBar)
                 _highlightBar.gameObject.SetActive(false);
@@ -59,6 +72,57 @@ namespace Route24.GameOff
             if (_highlightBackground)
                 _highlightBackground.color = _defaultColor;
         }
+        
+        // ─────────────────────────────────────────────
+        // Events
+        // ─────────────────────────────────────────────
+
+        private void OnInspectionStarted(InspectionStartedEvent evt)
+        {
+            _currentShip = evt.Ship;
+        }
+        
+        private void OnInspectionEnded(InspectionCompletedEvent evt)
+        {
+            _currentShip = null;
+            
+            ClearShipList();
+            
+            _consoleLeverSwitch?.ForceOff();
+        }
+        
+        private void OnLeverOn(LeverActivatedEvent evt)
+        {
+            Debug.Log("[ManifestConsole] Lever turned ON — loading ship cargo.");
+            if (_currentShip != null)
+                PopulateShipList(_currentShip.CargoList);
+        }
+
+        private void OnLeverOff(LeverDeactivatedEvent evt)
+        {
+            Debug.Log("[ManifestConsole] Lever turned OFF — clearing manifest.");
+            ClearShipList();
+        }
+
+        private void OnBannedListGenerated(BannedCargoGeneratedEvent evt)
+        {
+            Debug.Log($"[ManifestConsole] Banned list ready for Day {evt.Day}, populating display...");
+            PopulateBannedList(evt.BannedItems);
+        }
+
+        private void OnBannedListCleared(BannedCargoClearedEvent evt)
+        {
+            Debug.Log("[ManifestConsole] Banned list cleared — cleaning display.");
+            ClearBannedList();
+        }
+
+        private void ClearBannedList()
+        {
+            foreach (Transform child in _bannedListContainer)
+                Destroy(child.gameObject);
+            
+            _bannedItems.Clear();
+        }
 
         private void Update()
         {
@@ -66,44 +130,35 @@ namespace Route24.GameOff
             
             HandleInput();
             
-            // While in focus, pressing E exits the console
             if (Input.GetKeyDown(KeyCode.E))
                 ExitFocus();
         }
 
-        private void OnShipArrived(ShipArrivedForInspectionEvent evt)
+        private void PopulateBannedList(IReadOnlyList<CargoItem> bannedItems)
         {
-            // Create new manifest each ship
-            PopulateBannedList();
-            PopulateShipList(evt.Ship.CargoList);
-        }
-
-        private void PopulateBannedList()
-        {
-            _bannedItems = new List<string>(_manifestManager.BannedCargo);
             foreach (Transform child in _bannedListContainer)
                 Destroy(child.gameObject);
 
-            foreach (string item in _bannedItems)
+            foreach (CargoItem item in bannedItems)
             {
                 var obj = Instantiate(_cargoEntryPrefab, _bannedListContainer);
-                obj.GetComponentInChildren<TextMeshProUGUI>().text = item;
+                obj.GetComponentInChildren<TextMeshProUGUI>().text = item.DisplayName;
             }
+
+            _bannedItems = new List<CargoItem>(bannedItems);
         }
 
-        private void PopulateShipList(List<string> cargoList)
+        private void PopulateShipList(List<CargoItem> cargoList)
         {
             foreach (Transform child in _shipListContainer)
                 Destroy(child.gameObject);
             _shipEntries.Clear();
 
-            foreach (string item in cargoList)
+            foreach (CargoItem cargo in cargoList)
             {
-                // distort the text before scanning
-                string scrambled = DistortText(item);
                 var obj = Instantiate(_cargoEntryPrefab, _shipListContainer);
                 var entry = obj.GetComponent<CargoEntryUI>();
-                entry.Initialize(scrambled, item);
+                entry.Initialize(cargo);
                 _shipEntries.Add(entry);
             }
 
@@ -111,37 +166,53 @@ namespace Route24.GameOff
             UpdateHighlight();
         }
 
-        private string DistortText(string original)
+        private void ClearShipList()
         {
-            var chars = original.ToCharArray();
-            for (int i = 0; i < chars.Length; i++)
-            {
-                if (Random.value < 0.3f) chars[i] = '?';
-                else if (Random.value < 0.1f) chars[i] = (char)Random.Range(65, 90);
-            }
-            return new string(chars);
+            foreach (Transform child in _shipListContainer)
+                Destroy(child.gameObject);
+            _shipEntries.Clear();
+            
+            UpdateHighlight();
         }
 
         private void HandleInput()
         {
+            if (_isScanning) return;
+            
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll > 0f) ChangeSelection(-1);
-            else if (scroll < 0f) ChangeSelection(1);
+            bool upPressed = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
+            bool downPressed = Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S);
+                
+            if (scroll > 0f || upPressed)
+                ChangeSelection(-1);
+            else if (scroll < 0f || downPressed)
+                ChangeSelection(1);
             
             if (Input.GetKeyDown(KeyCode.Space))
                 ScanCurrent();
-
-            if (Input.GetKeyDown(KeyCode.E)) ExitFocus();
+            
+            if (Input.GetKeyDown(KeyCode.E))
+                ExitFocus();
         }
 
         private void ChangeSelection(int dir)
         {
+            if (_shipEntries == null || _shipEntries.Count == 0)
+                return;
+            
             _currentIndex = Mathf.Clamp(_currentIndex + dir, 0, _shipEntries.Count - 1);
             UpdateHighlight();
         }
 
         private void UpdateHighlight()
         {
+            if (!_highlightBar || _shipEntries == null || _shipEntries.Count == 0)
+            {
+                if (_highlightBar)
+                    _highlightBar.gameObject.SetActive(false);
+                return;
+            }
+            
             if (_highlightBar && _currentIndex < _shipEntries.Count)
                 _highlightBar.position = _shipEntries[_currentIndex].transform.position;
         }
@@ -181,7 +252,7 @@ namespace Route24.GameOff
             }
 
             // Perform the reveal
-            bool isBanned = _bannedItems.Contains(entry.ActualName);
+            bool isBanned = _bannedItems.Exists(x => x.Id == entry.Cargo.Id);
             yield return entry.ScanReveal(0f, _bannedItems);
 
             // Flash background color
@@ -220,20 +291,14 @@ namespace Route24.GameOff
         {
             _inFocus = true;
             GameManager.SetFocusMode(true);
-            _cameraController.FocusOn(transform);
+            
+            _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
             if (_highlightBar)
-            {
-                Debug.Log("[ManifestConsole] Enabling highlight bar");
                 _highlightBar.gameObject.SetActive(true);
-            }
-            else
-            {
-                Debug.LogWarning("[ManifestConsole] Highlight bar is null!");
-            }
 
             UpdateHighlight();
         }
