@@ -13,14 +13,14 @@ namespace Route24.GameOff
 
         private void Start()
         {
-            var gameManager = ServiceLocator.Get<GameManager>();
-            if (gameManager == null)
+            var shipManager = ServiceLocator.Get<ShipManager>();
+            if (shipManager == null)
             {
                 Debug.LogWarning("[ShipSceneSetup] GameManager not found via ServiceLocator.");
                 return;
             }
 
-            gameManager.RegisterSceneWaypoints(ShipSpawn, ShipDock, ShipExit, ShipSink);
+            shipManager.RegisterSceneWaypoints(ShipSpawn, ShipDock, ShipExit, ShipSink);
             Debug.Log("[ShipSceneSetup] Waypoints registered with GameManager.");
         }
     }   

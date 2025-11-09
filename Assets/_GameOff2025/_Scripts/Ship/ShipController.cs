@@ -22,12 +22,14 @@ namespace Route24.GameOff
         private Transform _exitPoint;
         private Transform _sinkPoint;
         private GameManager _gameManager;
+        private ShipManager _shipManager;
         private Coroutine _bobRoutine;
         private bool _isBobbing = false;
 
         private void Start()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
+            _shipManager = ServiceLocator.Get<ShipManager>();
         }
 
         public void Initialize(Transform spawn, Transform dock, Transform exit, Transform sink)
@@ -85,7 +87,7 @@ namespace Route24.GameOff
         private void OnArrivedAtDock()
         {
             Debug.Log("[ShipController] Arrived at dock, ready for inspection.");
-            _gameManager.OnShipReadyForInspection(this);
+            _shipManager.OnShipReadyForInspection(this);
             
             if (_enableBobbing)
             {
