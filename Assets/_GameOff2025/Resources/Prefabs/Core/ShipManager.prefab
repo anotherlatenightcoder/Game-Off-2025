@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 425ba5adb05c42ce850e172bcd50c917, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipManager
-  _shipsConfig:
+  _dayConfigs:
   - {fileID: 11400000, guid: 3e14d4017ea013a409cb7973902e4f83, type: 2}
   - {fileID: 11400000, guid: d39e2faed1b8c694c9e70a4e206e3b66, type: 2}
   - {fileID: 11400000, guid: f90f50a070608994ea3c6c3812ab561f, type: 2}

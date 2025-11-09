@@ -16,3 +16,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1401f97c62ca4b74fa2aad733882b5f5, type: 2}
   - {fileID: 11400000, guid: 2085ec1fea8b93e4e87633100e9f5cca, type: 2}
   - {fileID: 11400000, guid: 505d35518ea86614eb41d652747c383a, type: 2}
+  MinCargoCount: 3
+  MaxCargoCount: 5
+  ValidPercentage: 8
+  TimedShipRatio: 4
+  C: 3
