@@ -25,10 +25,12 @@ namespace Route24.GameOff
         private Coroutine _timerRoutine;
         private Material[] _digitMaterials;
         private EventHub _eventHub;
+        private GameManager _gameManager;
         
         private void Start()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
+            _gameManager = ServiceLocator.Get<GameManager>();
 
             _eventHub.Subscribe<ShipArrivedForInspectionEvent>(e => ResetClock());
             _eventHub.Subscribe<InspectionStartedEvent>(e => StartClock(e.Ship.ShipInspectionTime));
@@ -64,6 +66,9 @@ namespace Route24.GameOff
 
         public void StartClock(int seconds)
         {
+            if(seconds == -1) // no timer needed
+                return;
+            
             _remainingTime = seconds;
             _isActive = true;
             
@@ -98,6 +103,7 @@ namespace Route24.GameOff
 
             UpdateDisplay(0);
             _isActive = false;
+            _gameManager.CompleteInspection(false, true);
         }
         
         private void UpdateDisplay(int seconds)
