@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b19544ea62bc4988b9acf78707d609cf, type: 3}
+  m_Name: So_Day2_Ship2
+  m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipProfileSO
+  Profile:
+    ShipName: Usain Boat
+    CargoList:
+    - {fileID: 11400000, guid: c582f0eba41b10245a3d4f3e5b2cda26, type: 2}
+    - {fileID: 11400000, guid: 4dd7eecf026022c4da1b27e23207869c, type: 2}
+    IsValid: 0
+    ShipInspectionTime: 30
+    ShipPrefab: {fileID: 6274321207862857267, guid: 7e15046083101654399e41e011713f4d, type: 3}
