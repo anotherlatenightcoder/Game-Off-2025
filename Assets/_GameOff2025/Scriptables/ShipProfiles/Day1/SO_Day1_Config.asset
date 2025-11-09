@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6763c705de1b4f30ba027199aefc63d2, type: 3}
+  m_Name: SO_Day1_Config
+  m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipsOfDay
+  ShipProfiles:
+  - {fileID: 11400000, guid: 1401f97c62ca4b74fa2aad733882b5f5, type: 2}
+  - {fileID: 11400000, guid: 2085ec1fea8b93e4e87633100e9f5cca, type: 2}
+  - {fileID: 11400000, guid: 505d35518ea86614eb41d652747c383a, type: 2}

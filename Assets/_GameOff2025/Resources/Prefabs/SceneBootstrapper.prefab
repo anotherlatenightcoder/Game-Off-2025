@@ -51,4 +51,5 @@ MonoBehaviour:
   - {fileID: 4189541917832102611, guid: 3f51e5dec2d952b438219fcae84624a6, type: 3}
   - {fileID: 6905442745742105977, guid: 706f1bf99d22d4441a9a4f1b03d81e9a, type: 3}
   - {fileID: 4325951932046417073, guid: 3949f6133e71ceb4d9dccadbeca14948, type: 3}
+  - {fileID: 3117832194830453296, guid: f1dd8cdd4390bed40ad8cc927a2661df, type: 3}
   _skipSceneLoadIfAlreadyActive: 1
