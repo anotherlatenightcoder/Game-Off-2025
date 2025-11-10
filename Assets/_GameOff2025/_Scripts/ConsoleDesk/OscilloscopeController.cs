@@ -16,6 +16,16 @@ namespace Route24.GameOff
         [Header("Oscilloscope UI")]
         [SerializeField] private GameObject _oscilloscopeUI;
         
+        [Header("Waveform")]
+        [SerializeField] private UIWaveformDualRenderer _waveformRenderer;
+
+        [Header("Controls")]
+        [SerializeField] private Knob3DController _speedKnob;
+        [SerializeField] private Knob3DController _amplitudeKnob;
+        [SerializeField] private Knob3DController _frequencyKnob;
+        
+        public bool IsFocused => _inFocus;
+        
         private GameManager _gameManager;
         private EventHub _eventHub;
         private bool _inFocus = false;
@@ -32,6 +42,14 @@ namespace Route24.GameOff
             
             if (_oscilloscopeUI)
                 _oscilloscopeUI.SetActive(false);
+            
+            _speedKnob.InitializeLink(this);
+            _amplitudeKnob.InitializeLink(this);
+            _frequencyKnob.InitializeLink(this);
+            
+            _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerSpeed;
+            _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
+            _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
         }
 
         private void Update()

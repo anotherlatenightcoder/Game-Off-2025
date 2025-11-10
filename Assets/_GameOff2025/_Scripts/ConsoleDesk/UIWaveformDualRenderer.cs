@@ -40,6 +40,12 @@ namespace Route24.GameOff
         [SerializeField, Range(1f, 5f)] private float flatlineDuration = 3f;
         [SerializeField, Range(1f, 5f)] private float freezeDuration = 2f;
 
+        [Header("Signal Strength Variation")]
+        [SerializeField, Range(2f, 5f)] private float signalStrengthChangeIntervalMin = 5f;
+        [SerializeField, Range(2f, 5f)] private float signalStrengthChangeIntervalMax = 10f;
+        [SerializeField, Range(0.8f, 1.2f)] private float signalStrengthMin = 0.8f;
+        [SerializeField, Range(0.8f, 1.5f)] private float signalStrengthMax = 1.2f;
+
         [Header("Matching System")]
         [SerializeField, Range(0f, 100f)] private float matchThreshold = 90f;
         [SerializeField, Range(0.5f, 5f)] private float holdDuration = 3f;
@@ -59,11 +65,13 @@ namespace Route24.GameOff
         private float stateChangeTime;
         private float targetAmplitude;
         private float currentAmplitude;
+        private float signalStrength = 1f;
 
         // Match logic
         private float currentMatchPercent;
         private float holdTimer;
         private bool isLocked;
+        private bool canMatch = true;
 
         protected override void Awake()
         {
@@ -78,8 +86,18 @@ namespace Route24.GameOff
             if (shipHasVariation)
                 ScheduleNextState();
 
+            // Start random signal strength variation
+            StartCoroutine(SignalStrengthRoutine());
+
             UpdateUIText();
         }
+
+        // ─────────────────────────────────────────────
+        // External Setters
+        // ─────────────────────────────────────────────
+        public void SetPlayerAmplitude(float value) => playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);
+        public void SetPlayerFrequency(float value) => playerFrequency = Mathf.Clamp(value, 0.5f, 10f);
+        public void SetPlayerSpeed(float value) => playerSpeed = Mathf.Clamp(value, 0.1f, 10f);
 
         private void RegenerateNoiseMask()
         {
@@ -90,6 +108,9 @@ namespace Route24.GameOff
                 visibilityMask[i] = rand.NextDouble() < (signalIntegrity / 100f);
         }
 
+        // ─────────────────────────────────────────────
+        // Rendering
+        // ─────────────────────────────────────────────
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
@@ -100,10 +121,10 @@ namespace Route24.GameOff
             float centerY = height / 2f;
             float step = width / (resolution - 1);
 
-            // --- Ship wave ---
-            DrawWave(vh, width, height, centerY, step, shipColor, shipAmplitude, shipFrequency, shipTimeOffset, shipHasVariation, true);
+            // Ship wave
+            DrawWave(vh, width, height, centerY, step, shipColor, shipAmplitude * signalStrength, shipFrequency, shipTimeOffset, shipHasVariation, true);
 
-            // --- Player wave ---
+            // Player wave
             DrawWave(vh, width, height, centerY, step, playerColor, playerAmplitude, playerFrequency, playerTimeOffset, false, false);
         }
 
@@ -114,22 +135,16 @@ namespace Route24.GameOff
             bool prevValid = false;
             Color32 dark = new Color32(0, 0, 0, 255);
 
-            float ampUsed = allowState ? currentAmplitude : amp;
+            float ampUsed = allowState ? currentAmplitude * signalStrength : amp;
             bool flatline = allowState && currentState == SignalState.Flatline;
 
             for (int i = 0; i < resolution; i++)
             {
                 bool showVertex = !useNoise || visibilityMask[i];
                 float x = i * step;
-                float y;
-
-                if (flatline)
-                    y = centerY;
-                else
-                {
-                    float t = (x / width) * freq * Mathf.PI * 2f;
-                    y = centerY + Mathf.Sin(t + timeOff) * ampUsed * height * 0.5f;
-                }
+                float y = flatline
+                    ? centerY
+                    : centerY + Mathf.Sin((x / width) * freq * Mathf.PI * 2f + timeOff) * ampUsed * height * 0.5f;
 
                 Vector2 point = new Vector2(x, y);
 
@@ -169,11 +184,9 @@ namespace Route24.GameOff
 
         private void Update()
         {
-            // to fix the graphics ui rendering bug wiht constant scene redrawing
             if (!Application.isPlaying)
                 return;
             
-            HandlePlayerInput();
             if (shipHasVariation) HandleShipBehavior();
 
             shipTimeOffset += Time.deltaTime * shipSpeed;
@@ -185,10 +198,25 @@ namespace Route24.GameOff
                 RegenerateNoiseMask();
             }
 
-            CalculateMatch();
-            UpdateUIText();
+            if (canMatch)
+                CalculateMatch();
 
+            UpdateUIText();
             SetVerticesDirty();
+        }
+
+        // ─────────────────────────────────────────────
+        // Random Signal Strength Logic
+        // ─────────────────────────────────────────────
+        private IEnumerator SignalStrengthRoutine()
+        {
+            while (true)
+            {
+                float wait = Random.Range(signalStrengthChangeIntervalMin, signalStrengthChangeIntervalMax);
+                yield return new WaitForSeconds(wait);
+
+                signalStrength = Random.Range(signalStrengthMin, signalStrengthMax);
+            }
         }
 
         // ─────────────────────────────────────────────
@@ -201,16 +229,12 @@ namespace Route24.GameOff
             for (int i = 0; i < resolution; i++)
             {
                 float t = (i / (float)resolution) * Mathf.PI * 2f;
-
-                float shipY = Mathf.Sin(t * shipFrequency + shipTimeOffset) * currentAmplitude;
+                float shipY = Mathf.Sin(t * shipFrequency + shipTimeOffset) * currentAmplitude * signalStrength;
                 float playerY = Mathf.Sin(t * playerFrequency + playerTimeOffset) * playerAmplitude;
-
                 totalDiff += Mathf.Abs(shipY - playerY);
             }
 
             float avgDiff = totalDiff / resolution;
-
-            // Normalize by possible amplitude difference range (worst case)
             float maxPossibleDiff = Mathf.Max(0.001f, currentAmplitude + playerAmplitude);
             float normalized = Mathf.Clamp01(avgDiff / maxPossibleDiff);
             currentMatchPercent = (1f - normalized) * 100f;
@@ -230,7 +254,6 @@ namespace Route24.GameOff
                 holdTimer = Mathf.Max(0f, holdTimer - Time.deltaTime * drainSpeed);
             }
         }
-
 
         private void UpdateUIText()
         {
@@ -277,16 +300,19 @@ namespace Route24.GameOff
             {
                 currentState = SignalState.Normal;
                 targetAmplitude = shipAmplitude;
+                canMatch = true;
             }
             else if (roll < 65)
             {
                 currentState = SignalState.Fading;
                 targetAmplitude = Random.Range(0.05f, shipAmplitude * 0.4f);
+                canMatch = true;
             }
             else if (roll < 85)
             {
                 currentState = SignalState.Flatline;
-                StartCoroutine(EndStateAfter(flatlineDuration));
+                canMatch = false; // stop matching
+                StartCoroutine(EndStateAfter(flatlineDuration, true));
             }
             else
             {
@@ -295,34 +321,12 @@ namespace Route24.GameOff
             }
         }
 
-        private IEnumerator EndStateAfter(float duration)
+        private IEnumerator EndStateAfter(float duration, bool resumeMatch = false)
         {
             yield return new WaitForSeconds(duration);
             currentState = SignalState.Normal;
-        }
-
-        // ─────────────────────────────────────────────
-        // Player Input
-        // ─────────────────────────────────────────────
-        private void HandlePlayerInput()
-        {
-            // Amplitude W/S
-            if (Input.GetKey(KeyCode.W))
-                playerAmplitude = Mathf.Clamp(playerAmplitude + Time.deltaTime * 0.2f, 0.05f, 1f);
-            if (Input.GetKey(KeyCode.S))
-                playerAmplitude = Mathf.Clamp(playerAmplitude - Time.deltaTime * 0.2f, 0.05f, 1f);
-
-            // Frequency Z/C
-            if (Input.GetKey(KeyCode.Z))
-                playerFrequency = Mathf.Clamp(playerFrequency - Time.deltaTime * 0.5f, 0.5f, 10f);
-            if (Input.GetKey(KeyCode.C))
-                playerFrequency = Mathf.Clamp(playerFrequency + Time.deltaTime * 0.5f, 0.5f, 10f);
-
-            // Speed A/D
-            if (Input.GetKey(KeyCode.A))
-                playerSpeed = Mathf.Clamp(playerSpeed - Time.deltaTime * 0.5f, 0.1f, 10f);
-            if (Input.GetKey(KeyCode.D))
-                playerSpeed = Mathf.Clamp(playerSpeed + Time.deltaTime * 0.5f, 0.1f, 10f);
+            if (resumeMatch)
+                canMatch = true;
         }
     }
 }
