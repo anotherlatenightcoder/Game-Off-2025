@@ -41,8 +41,8 @@ namespace Route24.GameOff
         [SerializeField, Range(1f, 5f)] private float freezeDuration = 2f;
 
         [Header("Signal Strength Variation")]
-        [SerializeField, Range(2f, 5f)] private float signalStrengthChangeIntervalMin = 5f;
-        [SerializeField, Range(2f, 5f)] private float signalStrengthChangeIntervalMax = 10f;
+        [SerializeField, Range(1f, 20f)] private float signalStrengthChangeIntervalMin = 5f;
+        [SerializeField, Range(1f, 20f)] private float signalStrengthChangeIntervalMax = 10f;
         [SerializeField, Range(0.8f, 1.2f)] private float signalStrengthMin = 0.8f;
         [SerializeField, Range(0.8f, 1.5f)] private float signalStrengthMax = 1.2f;
 
@@ -52,6 +52,9 @@ namespace Route24.GameOff
         [SerializeField, Range(0.2f, 2f)] private float drainSpeed = 0.5f;
         [SerializeField] private TextMeshProUGUI matchPercentText;
         [SerializeField] private TextMeshProUGUI timerText;
+        
+        [Header("UI Feedback")]
+        [SerializeField] private Transform signalLockedIndicator;
 
         private float shipTimeOffset;
         private float playerTimeOffset;
@@ -72,6 +75,7 @@ namespace Route24.GameOff
         private float holdTimer;
         private bool isLocked;
         private bool canMatch = true;
+        private bool signalsStopped = false;
 
         protected override void Awake()
         {
@@ -187,6 +191,9 @@ namespace Route24.GameOff
             if (!Application.isPlaying)
                 return;
             
+            if (signalsStopped)
+                return;
+            
             if (shipHasVariation) HandleShipBehavior();
 
             shipTimeOffset += Time.deltaTime * shipSpeed;
@@ -246,10 +253,18 @@ namespace Route24.GameOff
                 {
                     isLocked = true;
                     Debug.Log("[WaveMatch] Signal Locked!");
+                    
+                    StopSignals();
+                    
+                    if (signalLockedIndicator)
+                        signalLockedIndicator.gameObject.SetActive(true);
                 }
             }
             else
             {
+                if (isLocked && signalLockedIndicator)
+                    signalLockedIndicator.gameObject.SetActive(false);
+                
                 isLocked = false;
                 holdTimer = Mathf.Max(0f, holdTimer - Time.deltaTime * drainSpeed);
             }
@@ -311,7 +326,11 @@ namespace Route24.GameOff
             else if (roll < 85)
             {
                 currentState = SignalState.Flatline;
-                canMatch = false; // stop matching
+                canMatch = false;
+                
+                if (signalLockedIndicator)
+                    signalLockedIndicator.gameObject.SetActive(false);
+                
                 StartCoroutine(EndStateAfter(flatlineDuration, true));
             }
             else
@@ -327,6 +346,27 @@ namespace Route24.GameOff
             currentState = SignalState.Normal;
             if (resumeMatch)
                 canMatch = true;
+        }
+        
+        // ─────────────────────────────────────────────
+        // Stop both signals completely
+        // ─────────────────────────────────────────────
+        public void StopSignals()
+        {
+            signalsStopped = true;
+
+            shipAmplitude = 0.05f;
+            shipFrequency = 0.5f;
+            shipSpeed = 0.1f;
+
+            playerAmplitude = 0.05f;
+            playerFrequency = 0.5f;
+            playerSpeed = 0.1f;
+
+            currentAmplitude = shipAmplitude;
+            signalStrength = 1f;
+
+            Debug.Log("[UIWaveform] Signals stopped — flatline.");
         }
     }
 }

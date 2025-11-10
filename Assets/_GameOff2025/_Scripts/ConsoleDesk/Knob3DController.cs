@@ -49,8 +49,6 @@ namespace Route24.GameOff
 
             float delta = -Input.GetAxis("Mouse Y") * _sensitivity;
             
-            Debug.Log("Drag: " + delta);
-            
             _normalizedValue = Mathf.Clamp01(_normalizedValue + delta * 0.02f);
             UpdateRotation();
 

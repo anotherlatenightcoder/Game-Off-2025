@@ -83,6 +83,8 @@ namespace Route24.GameOff
         {
             if (!_inFocus) return;
             
+            _waveformRenderer.StopSignals();
+            
             _inFocus = false;
             _recentlyExited = true;
             GameManager.SetFocusMode(false);
