@@ -8,151 +8,190 @@ namespace Route24.GameOff
     [RequireComponent(typeof(CanvasRenderer))]
     public class UIWaveformDualRenderer : Graphic
     {
-        public enum SignalNoiseMode { TransparentGaps, BlackNoise }
+        // ─────────────────────────────────────────────
+        // Shared Settings
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(100, 1000)] private int _resolution = 400;
+        [SerializeField, Range(0.5f, 5f)] private float _thickness = 2f;
 
-        [Header("Shared Settings")]
-        [SerializeField, Range(100, 1000)] private int resolution = 400;
-        [SerializeField, Range(0.5f, 5f)] private float thickness = 2f;
+        // ─────────────────────────────────────────────
+        // Ship (Target) Wave
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(0.05f, 1f)] private float _shipAmplitude = 0.3f;
+        [SerializeField, Range(0.5f, 10f)] private float _shipFrequency = 2f;
+        [SerializeField, Range(0.1f, 10f)] private float _shipSpeed = 2f;
+        [SerializeField] private Color _shipColor = Color.cyan;
+        [SerializeField] private bool _shipHasVariation = true;
 
-        [Header("Ship (Target) Wave")]
-        [SerializeField, Range(0.05f, 1f)] private float shipAmplitude = 0.3f;
-        [SerializeField, Range(0.5f, 10f)] private float shipFrequency = 2f;
-        [SerializeField, Range(0.1f, 10f)] private float shipSpeed = 2f;
-        [SerializeField] private Color shipColor = Color.cyan;
-        [SerializeField] private bool shipHasVariation = true;
+        // ─────────────────────────────────────────────
+        // Player Wave
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(0.05f, 1f)] private float _playerAmplitude = 0.3f;
+        [SerializeField, Range(0.5f, 10f)] private float _playerFrequency = 2f;
+        [SerializeField, Range(0.1f, 10f)] private float _playerSpeed = 2f;
+        [SerializeField] private Color _playerColor = Color.green;
 
-        [Header("Player Wave")]
-        [SerializeField, Range(0.05f, 1f)] private float playerAmplitude = 0.3f;
-        [SerializeField, Range(0.5f, 10f)] private float playerFrequency = 2f;
-        [SerializeField, Range(0.1f, 10f)] private float playerSpeed = 2f;
-        [SerializeField] private Color playerColor = Color.green;
-
-        [Header("Signal Integrity")]
+        // ─────────────────────────────────────────────
+        // Signal Integrity
+        // ─────────────────────────────────────────────
         [Tooltip("0 = fully degraded, 100 = perfect signal")]
-        [SerializeField, Range(0f, 100f)] private float signalIntegrity = 100f;
-        [SerializeField] private SignalNoiseMode noiseMode = SignalNoiseMode.TransparentGaps;
-        [SerializeField] private float noiseRefreshRate = 0.15f;
+        [SerializeField, Range(0f, 100f)] private float _signalIntegrity = 100f;
+        [SerializeField] private float _noiseRefreshRate = 0.15f;
 
-        [Header("Behavior Variations (Ship Only)")]
-        [SerializeField, Range(5f, 20f)] private float minEventInterval = 6f;
-        [SerializeField, Range(10f, 30f)] private float maxEventInterval = 15f;
-        [SerializeField, Range(1f, 5f)] private float fadeDuration = 2f;
-        [SerializeField, Range(1f, 5f)] private float flatlineDuration = 3f;
-        [SerializeField, Range(1f, 5f)] private float freezeDuration = 2f;
+        // ─────────────────────────────────────────────
+        // Behavior Variations (Ship Only)
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(5f, 20f)] private float _minEventInterval = 6f;
+        [SerializeField, Range(10f, 30f)] private float _maxEventInterval = 15f;
+        [SerializeField, Range(1f, 5f)] private float _fadeDuration = 2f;
+        [SerializeField, Range(1f, 5f)] private float _flatlineDuration = 3f;
+        [SerializeField, Range(1f, 5f)] private float _freezeDuration = 2f;
 
-        [Header("Signal Strength Variation")]
-        [SerializeField, Range(1f, 20f)] private float signalStrengthChangeIntervalMin = 5f;
-        [SerializeField, Range(1f, 20f)] private float signalStrengthChangeIntervalMax = 10f;
-        [SerializeField, Range(0.8f, 1.2f)] private float signalStrengthMin = 0.8f;
-        [SerializeField, Range(0.8f, 1.5f)] private float signalStrengthMax = 1.2f;
+        // ─────────────────────────────────────────────
+        // Signal Strength Variation
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(1f, 20f)] private float _signalChangeIntervalMin = 5f;
+        [SerializeField, Range(1f, 20f)] private float _signalChangeIntervalMax = 10f;
+        [SerializeField, Range(0.8f, 1.2f)] private float _signalStrengthMin = 0.8f;
+        [SerializeField, Range(0.8f, 1.5f)] private float _signalStrengthMax = 1.2f;
 
-        [Header("Matching System")]
-        [SerializeField, Range(0f, 100f)] private float matchThreshold = 90f;
-        [SerializeField, Range(0.5f, 5f)] private float holdDuration = 3f;
-        [SerializeField, Range(0.2f, 2f)] private float drainSpeed = 0.5f;
-        [SerializeField] private TextMeshProUGUI matchPercentText;
-        [SerializeField] private TextMeshProUGUI timerText;
-        
-        [Header("UI Feedback")]
-        [SerializeField] private Transform signalLockedIndicator;
+        // ─────────────────────────────────────────────
+        // Matching System
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(0f, 100f)] private float _matchThreshold = 90f;
+        [SerializeField, Range(0.5f, 5f)] private float _holdDuration = 3f;
+        [SerializeField, Range(0.2f, 2f)] private float _drainSpeed = 0.5f;
+        [SerializeField] private TextMeshProUGUI _matchPercentText;
+        [SerializeField] private TextMeshProUGUI _timerText;
+        [SerializeField] private Transform _signalLockedIndicator;
 
-        private float shipTimeOffset;
-        private float playerTimeOffset;
-        private float nextNoiseTime;
-        private bool[] visibilityMask;
-        private System.Random rand;
+        // ─────────────────────────────────────────────
+        // Internal State
+        // ─────────────────────────────────────────────
+        private float _shipTimeOffset;
+        private float _playerTimeOffset;
+        private float _nextNoiseTime;
+        private bool[] _visibilityMask;
+        private System.Random _rand;
 
-        // Ship behavior
         private enum SignalState { Normal, Fading, Flatline, Frozen }
-        private SignalState currentState = SignalState.Normal;
-        private float stateChangeTime;
-        private float targetAmplitude;
-        private float currentAmplitude;
-        private float signalStrength = 1f;
+        private SignalState _currentState = SignalState.Normal;
+        private float _stateChangeTime;
+        private float _targetAmplitude;
+        private float _currentAmplitude;
+        private float _signalStrength = 1f;
 
-        // Match logic
-        private float currentMatchPercent;
-        private float holdTimer;
-        private bool isLocked;
-        private bool canMatch = true;
-        private bool signalsStopped = false;
+        private float _currentMatchPercent;
+        private float _holdTimer;
+        private bool _isLocked;
+        private bool _canMatch = true;
+        private bool _signalsStopped = false;
 
+        // ─────────────────────────────────────────────
+        // Initialization
+        // ─────────────────────────────────────────────
         protected override void Awake()
         {
             base.Awake();
-            rand = new System.Random();
-            visibilityMask = new bool[resolution];
+            _rand = new System.Random();
+            _visibilityMask = new bool[_resolution];
             RegenerateNoiseMask();
 
-            targetAmplitude = shipAmplitude;
-            currentAmplitude = shipAmplitude;
+            _targetAmplitude = _shipAmplitude;
+            _currentAmplitude = _shipAmplitude;
 
-            if (shipHasVariation)
+            if (_shipHasVariation)
                 ScheduleNextState();
 
-            // Start random signal strength variation
-            StartCoroutine(SignalStrengthRoutine());
-
+            StartCoroutine(AdjustSignalStrengthRoutine());
             UpdateUIText();
         }
 
         // ─────────────────────────────────────────────
-        // External Setters
+        // Public API
         // ─────────────────────────────────────────────
-        public void SetPlayerAmplitude(float value) => playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);
-        public void SetPlayerFrequency(float value) => playerFrequency = Mathf.Clamp(value, 0.5f, 10f);
-        public void SetPlayerSpeed(float value) => playerSpeed = Mathf.Clamp(value, 0.1f, 10f);
-
-        private void RegenerateNoiseMask()
+        
+        public void SetPlayerAmplitude(float value) =>
+            _playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);
+        
+        public void SetPlayerFrequency(float value) =>
+            _playerFrequency = Mathf.Clamp(value, 0.5f, 10f);
+        
+        public void SetPlayerSpeed(float value) =>
+            _playerSpeed = Mathf.Clamp(value, 0.1f, 10f);
+        
+        public void StopSignals()
         {
-            if (visibilityMask == null || visibilityMask.Length != resolution)
-                visibilityMask = new bool[resolution];
+            _signalsStopped = true;
 
-            for (int i = 0; i < resolution; i++)
-                visibilityMask[i] = rand.NextDouble() < (signalIntegrity / 100f);
+            _shipAmplitude = 0.05f;
+            _shipFrequency = 0.5f;
+            _shipSpeed = 0.1f;
+
+            _playerAmplitude = 0.05f;
+            _playerFrequency = 0.5f;
+            _playerSpeed = 0.1f;
+
+            _currentAmplitude = _shipAmplitude;
+            _signalStrength = 1f;
+
+            Debug.Log("[UIWaveform] Signals stopped — flatline.");
         }
 
         // ─────────────────────────────────────────────
-        // Rendering
+        // Private Methods
         // ─────────────────────────────────────────────
+
+        /// <summary>Generates a new noise visibility mask based on signal integrity.</summary>
+        private void RegenerateNoiseMask()
+        {
+            if (_visibilityMask == null || _visibilityMask.Length != _resolution)
+                _visibilityMask = new bool[_resolution];
+
+            for (int i = 0; i < _resolution; i++)
+                _visibilityMask[i] = _rand.NextDouble() < (_signalIntegrity / 100f);
+        }
+
+        /// <summary>Draws the ship and player waveform lines.</summary>
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
-            if (resolution < 2) return;
+            if (_resolution < 2)
+                return;
 
+            // Ensure visibility mask is valid before rendering
+            if (_visibilityMask == null || _visibilityMask.Length != _resolution)
+                RegenerateNoiseMask();
+
+            DrawWave(vh, _shipColor, _shipAmplitude * _signalStrength, _shipFrequency, _shipTimeOffset, _shipHasVariation, true);
+            DrawWave(vh, _playerColor, _playerAmplitude, _playerFrequency, _playerTimeOffset, false, false);
+        }
+
+        /// <summary>Draws an individual waveform line.</summary>
+        private void DrawWave(VertexHelper vh, Color color, float amplitude, float frequency, float timeOffset, bool allowState, bool useNoise)
+        {
             float width = rectTransform.rect.width;
             float height = rectTransform.rect.height;
             float centerY = height / 2f;
-            float step = width / (resolution - 1);
+            float step = width / (_resolution - 1);
 
-            // Ship wave
-            DrawWave(vh, width, height, centerY, step, shipColor, shipAmplitude * signalStrength, shipFrequency, shipTimeOffset, shipHasVariation, true);
-
-            // Player wave
-            DrawWave(vh, width, height, centerY, step, playerColor, playerAmplitude, playerFrequency, playerTimeOffset, false, false);
-        }
-
-        private void DrawWave(VertexHelper vh, float width, float height, float centerY, float step, Color color,
-                              float amp, float freq, float timeOff, bool allowState, bool useNoise)
-        {
             Vector2 prev = Vector2.zero;
             bool prevValid = false;
-            Color32 dark = new Color32(0, 0, 0, 255);
 
-            float ampUsed = allowState ? currentAmplitude * signalStrength : amp;
-            bool flatline = allowState && currentState == SignalState.Flatline;
+            float ampUsed = allowState ? _currentAmplitude * _signalStrength : amplitude;
+            bool flatline = allowState && _currentState == SignalState.Flatline;
 
-            for (int i = 0; i < resolution; i++)
+            for (int i = 0; i < _resolution; i++)
             {
-                bool showVertex = !useNoise || visibilityMask[i];
+                bool showVertex = !useNoise || _visibilityMask[i];
                 float x = i * step;
                 float y = flatline
                     ? centerY
-                    : centerY + Mathf.Sin((x / width) * freq * Mathf.PI * 2f + timeOff) * ampUsed * height * 0.5f;
+                    : centerY + Mathf.Sin((x / width) * frequency * Mathf.PI * 2f + timeOffset) * ampUsed * height * 0.5f;
 
                 Vector2 point = new Vector2(x, y);
 
-                if (!showVertex && noiseMode == SignalNoiseMode.TransparentGaps)
+                if (!showVertex)
                 {
                     prevValid = false;
                     continue;
@@ -163,22 +202,20 @@ namespace Route24.GameOff
                     Vector2 dir = (point - prev).normalized;
                     Vector2 normal = new Vector2(-dir.y, dir.x);
 
-                    Vector2 v1 = prev + normal * thickness;
-                    Vector2 v2 = prev - normal * thickness;
-                    Vector2 v3 = point + normal * thickness;
-                    Vector2 v4 = point - normal * thickness;
+                    Vector2 v1 = prev + normal * _thickness;
+                    Vector2 v2 = prev - normal * _thickness;
+                    Vector2 v3 = point + normal * _thickness;
+                    Vector2 v4 = point - normal * _thickness;
 
-                    int startIndex = vh.currentVertCount;
-                    Color32 segmentColor = (showVertex || noiseMode == SignalNoiseMode.TransparentGaps)
-                        ? (Color32)color : dark;
+                    int start = vh.currentVertCount;
 
-                    vh.AddVert(v1, segmentColor, Vector2.zero);
-                    vh.AddVert(v2, segmentColor, Vector2.zero);
-                    vh.AddVert(v3, segmentColor, Vector2.zero);
-                    vh.AddVert(v4, segmentColor, Vector2.zero);
+                    vh.AddVert(v1, color, Vector2.zero);
+                    vh.AddVert(v2, color, Vector2.zero);
+                    vh.AddVert(v3, color, Vector2.zero);
+                    vh.AddVert(v4, color, Vector2.zero);
 
-                    vh.AddTriangle(startIndex + 0, startIndex + 1, startIndex + 2);
-                    vh.AddTriangle(startIndex + 2, startIndex + 1, startIndex + 3);
+                    vh.AddTriangle(start, start + 1, start + 2);
+                    vh.AddTriangle(start + 2, start + 1, start + 3);
                 }
 
                 prev = point;
@@ -186,187 +223,167 @@ namespace Route24.GameOff
             }
         }
 
+        /// <summary>Main update loop for signal animation and behavior.</summary>
         private void Update()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || _signalsStopped)
                 return;
-            
-            if (signalsStopped)
-                return;
-            
-            if (shipHasVariation) HandleShipBehavior();
 
-            shipTimeOffset += Time.deltaTime * shipSpeed;
-            playerTimeOffset += Time.deltaTime * playerSpeed;
+            if (_shipHasVariation)
+                HandleShipBehavior();
 
-            if (Time.time >= nextNoiseTime)
+            _shipTimeOffset += Time.deltaTime * _shipSpeed;
+            _playerTimeOffset += Time.deltaTime * _playerSpeed;
+
+            if (Time.time >= _nextNoiseTime)
             {
-                nextNoiseTime = Time.time + noiseRefreshRate;
+                _nextNoiseTime = Time.time + _noiseRefreshRate;
                 RegenerateNoiseMask();
             }
 
-            if (canMatch)
+            if (_canMatch)
                 CalculateMatch();
 
             UpdateUIText();
             SetVerticesDirty();
         }
 
-        // ─────────────────────────────────────────────
-        // Random Signal Strength Logic
-        // ─────────────────────────────────────────────
-        private IEnumerator SignalStrengthRoutine()
-        {
-            while (true)
-            {
-                float wait = Random.Range(signalStrengthChangeIntervalMin, signalStrengthChangeIntervalMax);
-                yield return new WaitForSeconds(wait);
-
-                signalStrength = Random.Range(signalStrengthMin, signalStrengthMax);
-            }
-        }
-
-        // ─────────────────────────────────────────────
-        // Matching Logic
-        // ─────────────────────────────────────────────
-        private void CalculateMatch()
-        {
-            float totalDiff = 0f;
-
-            for (int i = 0; i < resolution; i++)
-            {
-                float t = (i / (float)resolution) * Mathf.PI * 2f;
-                float shipY = Mathf.Sin(t * shipFrequency + shipTimeOffset) * currentAmplitude * signalStrength;
-                float playerY = Mathf.Sin(t * playerFrequency + playerTimeOffset) * playerAmplitude;
-                totalDiff += Mathf.Abs(shipY - playerY);
-            }
-
-            float avgDiff = totalDiff / resolution;
-            float maxPossibleDiff = Mathf.Max(0.001f, currentAmplitude + playerAmplitude);
-            float normalized = Mathf.Clamp01(avgDiff / maxPossibleDiff);
-            currentMatchPercent = (1f - normalized) * 100f;
-
-            if (currentMatchPercent >= matchThreshold)
-            {
-                holdTimer += Time.deltaTime;
-                if (holdTimer >= holdDuration && !isLocked)
-                {
-                    isLocked = true;
-                    Debug.Log("[WaveMatch] Signal Locked!");
-                    
-                    StopSignals();
-                    
-                    if (signalLockedIndicator)
-                        signalLockedIndicator.gameObject.SetActive(true);
-                }
-            }
-            else
-            {
-                if (isLocked && signalLockedIndicator)
-                    signalLockedIndicator.gameObject.SetActive(false);
-                
-                isLocked = false;
-                holdTimer = Mathf.Max(0f, holdTimer - Time.deltaTime * drainSpeed);
-            }
-        }
-
+        /// <summary>Updates text fields with current match and hold values.</summary>
         private void UpdateUIText()
         {
-            if (matchPercentText)
-                matchPercentText.text = $"Match: {currentMatchPercent:0.0}%";
+            if (_matchPercentText)
+                _matchPercentText.text = $"Match: {_currentMatchPercent:0.0}%";
 
-            if (timerText)
+            if (_timerText)
             {
-                float remaining = Mathf.Max(0f, holdDuration - holdTimer);
-                timerText.text = $"Hold: {remaining:0.0}s";
+                float remaining = Mathf.Max(0f, _holdDuration - _holdTimer);
+                _timerText.text = $"Hold: {remaining:0.0}s";
             }
         }
 
-        // ─────────────────────────────────────────────
-        // Ship Behavior Logic
-        // ─────────────────────────────────────────────
+        /// <summary>Handles random ship state transitions (fading, flatline, frozen).</summary>
         private void HandleShipBehavior()
         {
-            if (currentState == SignalState.Frozen)
+            if (_currentState == SignalState.Frozen)
                 return;
 
-            if (currentState == SignalState.Fading)
-                currentAmplitude = Mathf.Lerp(currentAmplitude, targetAmplitude, Time.deltaTime / fadeDuration);
+            if (_currentState == SignalState.Fading)
+                _currentAmplitude = Mathf.Lerp(_currentAmplitude, _targetAmplitude, Time.deltaTime / _fadeDuration);
             else
-                currentAmplitude = Mathf.Lerp(currentAmplitude, shipAmplitude, Time.deltaTime * 1.5f);
+                _currentAmplitude = Mathf.Lerp(_currentAmplitude, _shipAmplitude, Time.deltaTime * 1.5f);
 
-            if (Time.time >= stateChangeTime)
+            if (Time.time >= _stateChangeTime)
             {
                 ChangeState();
                 ScheduleNextState();
             }
         }
 
+        /// <summary>Schedules the next random ship state event.</summary>
         private void ScheduleNextState()
         {
-            float interval = Random.Range(minEventInterval, maxEventInterval);
-            stateChangeTime = Time.time + interval;
+            float interval = Random.Range(_minEventInterval, _maxEventInterval);
+            _stateChangeTime = Time.time + interval;
         }
 
+        /// <summary>Changes the ship signal to a new random state.</summary>
         private void ChangeState()
         {
             int roll = Random.Range(0, 100);
+
             if (roll < 40)
             {
-                currentState = SignalState.Normal;
-                targetAmplitude = shipAmplitude;
-                canMatch = true;
+                _currentState = SignalState.Normal;
+                _targetAmplitude = _shipAmplitude;
+                _canMatch = true;
             }
             else if (roll < 65)
             {
-                currentState = SignalState.Fading;
-                targetAmplitude = Random.Range(0.05f, shipAmplitude * 0.4f);
-                canMatch = true;
+                _currentState = SignalState.Fading;
+                _targetAmplitude = Random.Range(0.05f, _shipAmplitude * 0.4f);
+                _canMatch = true;
             }
             else if (roll < 85)
             {
-                currentState = SignalState.Flatline;
-                canMatch = false;
-                
-                if (signalLockedIndicator)
-                    signalLockedIndicator.gameObject.SetActive(false);
-                
-                StartCoroutine(EndStateAfter(flatlineDuration, true));
+                _currentState = SignalState.Flatline;
+                _canMatch = false;
+
+                if (_signalLockedIndicator)
+                    _signalLockedIndicator.gameObject.SetActive(false);
+
+                StartCoroutine(EndStateAfterDelay(_flatlineDuration, true));
             }
             else
             {
-                currentState = SignalState.Frozen;
-                StartCoroutine(EndStateAfter(freezeDuration));
+                _currentState = SignalState.Frozen;
+                StartCoroutine(EndStateAfterDelay(_freezeDuration));
             }
         }
 
-        private IEnumerator EndStateAfter(float duration, bool resumeMatch = false)
+        /// <summary>Calculates how closely the player and ship signals align.</summary>
+        private void CalculateMatch()
+        {
+            float totalDiff = 0f;
+
+            for (int i = 0; i < _resolution; i++)
+            {
+                float t = (i / (float)_resolution) * Mathf.PI * 2f;
+                float shipY = Mathf.Sin(t * _shipFrequency + _shipTimeOffset) * _currentAmplitude * _signalStrength;
+                float playerY = Mathf.Sin(t * _playerFrequency + _playerTimeOffset) * _playerAmplitude;
+                totalDiff += Mathf.Abs(shipY - playerY);
+            }
+
+            float avgDiff = totalDiff / _resolution;
+            float maxPossibleDiff = Mathf.Max(0.001f, _currentAmplitude + _playerAmplitude);
+            float normalized = Mathf.Clamp01(avgDiff / maxPossibleDiff);
+            _currentMatchPercent = (1f - normalized) * 100f;
+
+            if (_currentMatchPercent >= _matchThreshold)
+            {
+                _holdTimer += Time.deltaTime;
+                if (_holdTimer >= _holdDuration && !_isLocked)
+                {
+                    _isLocked = true;
+                    Debug.Log("[WaveMatch] Signal Locked!");
+
+                    StopSignals();
+                    if (_signalLockedIndicator)
+                        _signalLockedIndicator.gameObject.SetActive(true);
+                }
+            }
+            else
+            {
+                if (_isLocked && _signalLockedIndicator)
+                    _signalLockedIndicator.gameObject.SetActive(false);
+
+                _isLocked = false;
+                _holdTimer = Mathf.Max(0f, _holdTimer - Time.deltaTime * _drainSpeed);
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // Coroutines
+        // ─────────────────────────────────────────────
+
+        /// <summary>Gradually varies the ship signal strength over time.</summary>
+        private IEnumerator AdjustSignalStrengthRoutine()
+        {
+            while (true)
+            {
+                float wait = Random.Range(_signalChangeIntervalMin, _signalChangeIntervalMax);
+                yield return new WaitForSeconds(wait);
+
+                _signalStrength = Random.Range(_signalStrengthMin, _signalStrengthMax);
+            }
+        }
+
+        /// <summary>Ends a temporary state (flatline/frozen) after a delay.</summary>
+        private IEnumerator EndStateAfterDelay(float duration, bool resumeMatch = false)
         {
             yield return new WaitForSeconds(duration);
-            currentState = SignalState.Normal;
+            _currentState = SignalState.Normal;
             if (resumeMatch)
-                canMatch = true;
-        }
-        
-        // ─────────────────────────────────────────────
-        // Stop both signals completely
-        // ─────────────────────────────────────────────
-        public void StopSignals()
-        {
-            signalsStopped = true;
-
-            shipAmplitude = 0.05f;
-            shipFrequency = 0.5f;
-            shipSpeed = 0.1f;
-
-            playerAmplitude = 0.05f;
-            playerFrequency = 0.5f;
-            playerSpeed = 0.1f;
-
-            currentAmplitude = shipAmplitude;
-            signalStrength = 1f;
-
-            Debug.Log("[UIWaveform] Signals stopped — flatline.");
+                _canMatch = true;
         }
     }
 }
