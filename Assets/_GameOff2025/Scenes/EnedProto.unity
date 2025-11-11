@@ -2453,35 +2453,34 @@ MonoBehaviour:
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  resolution: 400
-  thickness: 2
-  shipAmplitude: 0.3
-  shipFrequency: 2
-  shipSpeed: 2
-  shipColor: {r: 0, g: 1, b: 1, a: 1}
-  shipHasVariation: 1
-  playerAmplitude: 0.05
-  playerFrequency: 0.5
-  playerSpeed: 2
-  playerColor: {r: 0, g: 1, b: 0, a: 1}
-  signalIntegrity: 100
-  noiseMode: 0
-  noiseRefreshRate: 0.15
-  minEventInterval: 6
-  maxEventInterval: 15
-  fadeDuration: 2
-  flatlineDuration: 3
-  freezeDuration: 2
-  signalStrengthChangeIntervalMin: 10
-  signalStrengthChangeIntervalMax: 20
-  signalStrengthMin: 0.8
-  signalStrengthMax: 1.2
-  matchThreshold: 90
-  holdDuration: 3
-  drainSpeed: 0.5
-  matchPercentText: {fileID: 555069954}
-  timerText: {fileID: 1360991407}
-  signalLockedIndicator: {fileID: 474556325}
+  _resolution: 400
+  _thickness: 2
+  _shipAmplitude: 0.3
+  _shipFrequency: 2
+  _shipSpeed: 2
+  _shipColor: {r: 0, g: 1, b: 1, a: 1}
+  _shipHasVariation: 1
+  _playerAmplitude: 0.3
+  _playerFrequency: 2
+  _playerSpeed: 2
+  _playerColor: {r: 0, g: 1, b: 0, a: 1}
+  _signalIntegrity: 100
+  _noiseRefreshRate: 0.15
+  _minEventInterval: 6
+  _maxEventInterval: 15
+  _fadeDuration: 2
+  _flatlineDuration: 3
+  _freezeDuration: 2
+  _signalChangeIntervalMin: 5
+  _signalChangeIntervalMax: 10
+  _signalStrengthMin: 0.8
+  _signalStrengthMax: 1.2
+  _matchThreshold: 90
+  _holdDuration: 3
+  _drainSpeed: 0.5
+  _matchPercentText: {fileID: 555069954}
+  _timerText: {fileID: 1360991407}
+  _signalLockedIndicator: {fileID: 474556325}
 --- !u!1 &821040468
 GameObject:
   m_ObjectHideFlags: 0
@@ -2740,6 +2739,7 @@ MonoBehaviour:
   _speedKnob: {fileID: 958387173}
   _amplitudeKnob: {fileID: 1285780097}
   _frequencyKnob: {fileID: 923523822}
+  _exitCooldown: 0.5
 --- !u!65 &857356728
 BoxCollider:
   m_ObjectHideFlags: 0
