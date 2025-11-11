@@ -4,133 +4,140 @@ using UnityEngine;
 
 namespace Route24.GameOff
 {
+    /// <summary>
+    /// Handles player interaction with the Oscilloscope console (wave minigame).
+    /// Handles the camera focus, starts the UI, and links the knob input connections to
+    /// the waveformRenderer component.
+    /// </summary>
     public class OscilloscopeController : MonoBehaviour, IInteractable, ISceneInitializable
     {
         [Header("Camera Settings")]
         [SerializeField] private SeatedCameraController _cameraController;
-
         [SerializeField] private Transform _cameraFocusPoint;
         [SerializeField] private Transform _cameraLookTarget;
-        [SerializeField] private float _focusFOV = 35f;
-        
+        [SerializeField, Range(20f, 60f)] private float _focusFOV = 35f;
+
         [Header("Oscilloscope UI")]
         [SerializeField] private GameObject _oscilloscopeUI;
-        
-        [Header("Waveform")]
+
+        [Header("Waveform Renderer")]
         [SerializeField] private UIWaveformDualRenderer _waveformRenderer;
 
-        [Header("Controls")]
+        [Header("Knob Controls")]
         [SerializeField] private Knob3DController _speedKnob;
         [SerializeField] private Knob3DController _amplitudeKnob;
         [SerializeField] private Knob3DController _frequencyKnob;
-        
+
+        [Header("Settings")]
+        [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
+
         public bool IsFocused => _inFocus;
-        
+
         private GameManager _gameManager;
-        private EventHub _eventHub;
-        private bool _inFocus = false;
-        private bool _recentlyExited = false;
-        private float _exitCooldown = 0.5f;
-        
-        // ─────────────────────────────────────────────
-        // Initialization
-        // ─────────────────────────────────────────────
+        private bool _inFocus;
+        private bool _focusCooldownActive;
+
+        /// <summary>
+        /// Called by the SceneObjectInitializer after core systems are ready.
+        /// Initializes references, disables UI by default, and sets up knob linkage.
+        /// </summary>
         public void SceneInitialize()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
-            _eventHub = ServiceLocator.Get<EventHub>();
-            
+
+            if (!_waveformRenderer)
+            {
+                Debug.LogError("[OscilloscopeController] Missing waveform renderer reference.");
+                return;
+            }
+
             if (_oscilloscopeUI)
                 _oscilloscopeUI.SetActive(false);
-            
-            _speedKnob.InitializeLink(this);
-            _amplitudeKnob.InitializeLink(this);
-            _frequencyKnob.InitializeLink(this);
-            
-            _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerSpeed;
-            _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
-            _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
-        }
 
+            InitializeKnobs();
+        }
+        
+        private void InitializeKnobs()
+        {
+            Knob3DController[] knobs = { _speedKnob, _amplitudeKnob, _frequencyKnob };
+
+            foreach (var knob in knobs)
+            {
+                if (!knob)
+                {
+                    Debug.LogWarning($"[OscilloscopeController] Missing knob reference on {name}.");
+                    continue;
+                }
+
+                knob.InitializeLink(this);
+            }
+
+            if (_speedKnob) _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerSpeed;
+            if (_amplitudeKnob) _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
+            if (_frequencyKnob) _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
+        }
+        
         private void Update()
         {
-            if (!_inFocus) return;
-
-            if (Input.GetKeyDown(KeyCode.E))
-                ExitFocus();
+            if (_inFocus && Input.GetKeyDown(KeyCode.E))
+                SetFocus(false);
         }
         
-        // ─────────────────────────────────────────────
-        // Focus Handling
-        // ─────────────────────────────────────────────
-        private void EnterFocus()
+        private void SetFocus(bool state)
         {
-            if (_inFocus) return;
-            
-            _inFocus = true;
-            GameManager.SetFocusMode(true);
-            
-            _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
-            
-            if (_oscilloscopeUI)
-                _oscilloscopeUI.SetActive(true);
+            if (state == _inFocus) return;
 
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            _inFocus = state;
+            GameManager.SetFocusMode(state);
+
+            if (state)
+            {
+                _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
+                if (_oscilloscopeUI) _oscilloscopeUI.SetActive(true);
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else
+            {
+                _waveformRenderer.StopSignals();
+                _focusCooldownActive = true;
+
+                _cameraController.ReturnToDefault();
+                if (_oscilloscopeUI) _oscilloscopeUI.SetActive(false);
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+
+                StartCoroutine(FocusCooldownRoutine());
+            }
         }
 
-        public void ExitFocus()
-        {
-            if (!_inFocus) return;
-            
-            _waveformRenderer.StopSignals();
-            
-            _inFocus = false;
-            _recentlyExited = true;
-            GameManager.SetFocusMode(false);
-            
-            _cameraController.ReturnToDefault();
-            
-            if (_oscilloscopeUI)
-                _oscilloscopeUI.SetActive(false);
-            
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-
-            StartCoroutine(ExitCooldownRoutine());
-        }
-        
-        private IEnumerator ExitCooldownRoutine()
+        /// <summary>
+        /// Enforces a short cooldown after exiting focus mode to prevent
+        /// immediate re-entry or camera offset. It was due to a
+        /// strange bug I was having with the other console.
+        /// </summary>
+        private IEnumerator FocusCooldownRoutine()
         {
             yield return new WaitForSeconds(_exitCooldown);
-            _recentlyExited = false;
+            _focusCooldownActive = false;
         }
         
-        // ─────────────────────────────────────────────
-        // IInteractable Implementation
-        // ─────────────────────────────────────────────
-        public string GetInteractionText()
-        {
-            if (_inFocus) return string.Empty;
-            return "Access Oscilloscope [E]";
-        }
-
+        public string GetInteractionText() => _inFocus ? string.Empty : "Access Oscilloscope [E]";
+        
         public bool CanInteract()
         {
-            return !_inFocus && !_recentlyExited && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            // UNCOMMENT AFTER TESTING:
+            // return !_inFocus && !_focusCooldownActive && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            return !_inFocus && !_focusCooldownActive && _gameManager;
         }
-
+        
         public bool CanShowMessage()
         {
-            return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            // UNCOMMENT AFTER TESTING:
+            // return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            return !_inFocus && _gameManager;
         }
-
-        public void OnInteract()
-        {
-            if (_inFocus)
-                ExitFocus();
-            else
-                EnterFocus();
-        }
+        
+        public void OnInteract() => SetFocus(!_inFocus);
     }
 }
