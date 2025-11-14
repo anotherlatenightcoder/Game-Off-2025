@@ -34,6 +34,12 @@ namespace Route24.GameOff
             _parent = parent;
         }
 
+        public float GetCurrentValue()
+        {
+            float t = Mathf.InverseLerp(_minAngle, _maxAngle, _currentAngle);
+            return Mathf.Lerp(_minValue, _maxValue, t);
+        }
+
         private void OnMouseDown()
         {
             if (!_parent || !_parent.IsFocused) return;
@@ -90,9 +96,7 @@ namespace Route24.GameOff
 
         private void FireValueChangedEvent()
         {
-            float t = Mathf.InverseLerp(_minAngle, _maxAngle, _currentAngle);
-            float value = Mathf.Lerp(_minValue, _maxValue, t);
-            OnValueChanged?.Invoke(value);
+            OnValueChanged?.Invoke(GetCurrentValue());
         }
     }
 }

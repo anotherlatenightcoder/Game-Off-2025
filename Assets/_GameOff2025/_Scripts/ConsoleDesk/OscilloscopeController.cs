@@ -55,6 +55,7 @@ namespace Route24.GameOff
                 _oscilloscopeUI.SetActive(false);
 
             InitializeKnobs();
+            SetInitialWaveSettings();
         }
         
         private void InitializeKnobs()
@@ -72,9 +73,17 @@ namespace Route24.GameOff
                 knob.InitializeLink(this);
             }
 
-            if (_speedKnob) _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerSpeed;
-            if (_amplitudeKnob) _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
-            if (_frequencyKnob) _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
+            _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerOffset;
+            _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
+            _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
+
+        }
+
+        private void SetInitialWaveSettings()
+        {
+            _waveformRenderer.SetPlayerOffset(_speedKnob.GetCurrentValue());
+            _waveformRenderer.SetPlayerAmplitude(_amplitudeKnob.GetCurrentValue());
+            _waveformRenderer.SetPlayerFrequency(_frequencyKnob.GetCurrentValue());
         }
         
         private void Update()

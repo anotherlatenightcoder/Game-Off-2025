@@ -13,13 +13,13 @@ namespace Route24.GameOff
         // ─────────────────────────────────────────────
         [SerializeField, Range(100, 1000)] private int _resolution = 400;
         [SerializeField, Range(0.5f, 5f)] private float _thickness = 2f;
+        [SerializeField] private float _waveSpeed = 1f;
 
         // ─────────────────────────────────────────────
         // Ship (Target) Wave
         // ─────────────────────────────────────────────
         [SerializeField, Range(0.05f, 1f)] private float _shipAmplitude = 0.3f;
         [SerializeField, Range(0.5f, 10f)] private float _shipFrequency = 2f;
-        [SerializeField, Range(0.1f, 10f)] private float _shipSpeed = 2f;
         [SerializeField] private Color _shipColor = Color.cyan;
         [SerializeField] private bool _shipHasVariation = true;
 
@@ -28,7 +28,6 @@ namespace Route24.GameOff
         // ─────────────────────────────────────────────
         [SerializeField, Range(0.05f, 1f)] private float _playerAmplitude = 0.3f;
         [SerializeField, Range(0.5f, 10f)] private float _playerFrequency = 2f;
-        [SerializeField, Range(0.1f, 10f)] private float _playerSpeed = 2f;
         [SerializeField] private Color _playerColor = Color.green;
 
         // ─────────────────────────────────────────────
@@ -68,6 +67,7 @@ namespace Route24.GameOff
         // ─────────────────────────────────────────────
         // Internal State
         // ─────────────────────────────────────────────
+        private float _timeOffset;
         private float _shipTimeOffset;
         private float _playerTimeOffset;
         private float _nextNoiseTime;
@@ -86,6 +86,7 @@ namespace Route24.GameOff
         private bool _isLocked;
         private bool _canMatch = true;
         private bool _signalsStopped = false;
+
 
         // ─────────────────────────────────────────────
         // Initialization
@@ -117,8 +118,8 @@ namespace Route24.GameOff
         public void SetPlayerFrequency(float value) =>
             _playerFrequency = Mathf.Clamp(value, 0.5f, 10f);
         
-        public void SetPlayerSpeed(float value) =>
-            _playerSpeed = Mathf.Clamp(value, 0.1f, 10f);
+        public void SetPlayerOffset(float value) =>
+            _playerTimeOffset = Mathf.Clamp(value, -3, 3f);
         
         public void StopSignals()
         {
@@ -126,11 +127,9 @@ namespace Route24.GameOff
 
             _shipAmplitude = 0.05f;
             _shipFrequency = 0.5f;
-            _shipSpeed = 0.1f;
 
             _playerAmplitude = 0.05f;
             _playerFrequency = 0.5f;
-            _playerSpeed = 0.1f;
 
             _currentAmplitude = _shipAmplitude;
             _signalStrength = 1f;
@@ -163,8 +162,8 @@ namespace Route24.GameOff
             if (_visibilityMask == null || _visibilityMask.Length != _resolution)
                 RegenerateNoiseMask();
 
-            DrawWave(vh, _shipColor, _shipAmplitude * _signalStrength, _shipFrequency, _shipTimeOffset, _shipHasVariation, true);
-            DrawWave(vh, _playerColor, _playerAmplitude, _playerFrequency, _playerTimeOffset, false, false);
+            DrawWave(vh, _shipColor, _shipAmplitude * _signalStrength, _shipFrequency, _timeOffset + _shipTimeOffset, _shipHasVariation, true);
+            DrawWave(vh, _playerColor, _playerAmplitude, _playerFrequency, _timeOffset + _playerTimeOffset, false, false);
         }
 
         /// <summary>Draws an individual waveform line.</summary>
@@ -229,17 +228,10 @@ namespace Route24.GameOff
             if (!Application.isPlaying || _signalsStopped)
                 return;
 
-            if (_shipHasVariation)
-                HandleShipBehavior();
+            //if (_shipHasVariation)  // this is making the game harder.
+            //    HandleShipBehavior();
 
-            _shipTimeOffset += Time.deltaTime * _shipSpeed;
-            _playerTimeOffset += Time.deltaTime * _playerSpeed;
-
-            if (Time.time >= _nextNoiseTime)
-            {
-                _nextNoiseTime = Time.time + _noiseRefreshRate;
-                RegenerateNoiseMask();
-            }
+            _timeOffset += Time.deltaTime * _waveSpeed;
 
             if (_canMatch)
                 CalculateMatch();
