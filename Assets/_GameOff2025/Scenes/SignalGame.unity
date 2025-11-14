@@ -2455,10 +2455,17 @@ MonoBehaviour:
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   _resolution: 400
   _thickness: 2
-  _shipAmplitude: 0.3
-  _shipFrequency: 2
+  _waveSpeed: 1
+  _shipAmplitude: 0.28297552
+  _shipFrequency: 6.9527893
   _shipColor: {r: 0, g: 1, b: 1, a: 1}
   _shipHasVariation: 1
+  _minShipAmplitude: 0.1
+  _maxShipAmplitude: 0.8
+  _minShipFrequency: 2
+  _maxShipFrequency: 8
+  _minShipOffset: -3
+  _maxShipOffset: 3
   _playerAmplitude: 0.3
   _playerFrequency: 2
   _playerColor: {r: 0, g: 1, b: 0, a: 1}
@@ -2469,8 +2476,8 @@ MonoBehaviour:
   _fadeDuration: 2
   _flatlineDuration: 3
   _freezeDuration: 2
-  _signalChangeIntervalMin: 5
-  _signalChangeIntervalMax: 10
+  _signalChangeIntervalMin: 20
+  _signalChangeIntervalMax: 20
   _signalStrengthMin: 0.8
   _signalStrengthMax: 1.2
   _matchThreshold: 90
@@ -2479,7 +2486,7 @@ MonoBehaviour:
   _matchPercentText: {fileID: 555069954}
   _timerText: {fileID: 1360991407}
   _signalLockedIndicator: {fileID: 474556325}
-  _waveSpeed: 1
+  _waveLengthMultiplier: 1
 --- !u!1 &821040468
 GameObject:
   m_ObjectHideFlags: 0
@@ -3216,8 +3223,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.Knob3DController
   _knobMesh: {fileID: 923523821}
-  _minValue: 0.5
-  _maxValue: 10
+  _minValue: 2
+  _maxValue: 8
   _label: Adjust Amplitude
 --- !u!65 &923523823
 BoxCollider:
@@ -4768,8 +4775,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.Knob3DController
   _knobMesh: {fileID: 1285780093}
-  _minValue: 0.05
-  _maxValue: 1
+  _minValue: 0.1
+  _maxValue: 0.8
   _label: Adjust Amplitude
 --- !u!1 &1321045898
 GameObject:

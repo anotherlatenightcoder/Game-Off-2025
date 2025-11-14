@@ -102,7 +102,7 @@ namespace Route24.GameOff
             if (state)
             {
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
-                if (_oscilloscopeUI) _oscilloscopeUI.SetActive(true);
+                _waveformRenderer.StartNewSignalGame();
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -112,7 +112,6 @@ namespace Route24.GameOff
                 _focusCooldownActive = true;
 
                 _cameraController.ReturnToDefault();
-                if (_oscilloscopeUI) _oscilloscopeUI.SetActive(false);
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
 

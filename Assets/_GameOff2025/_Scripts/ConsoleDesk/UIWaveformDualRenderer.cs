@@ -23,6 +23,17 @@ namespace Route24.GameOff
         [SerializeField] private Color _shipColor = Color.cyan;
         [SerializeField] private bool _shipHasVariation = true;
 
+        // Ship (Target) Min Max Wave
+        // ─────────────────────────────────────────────
+        [SerializeField, Range(0.01f, 1f)] private float _minShipAmplitude = 0.1f;
+        [SerializeField, Range(0.01f, 3f)] private float _maxShipAmplitude = 0.5f;
+
+        [SerializeField, Range(0.1f, 5f)] private float _minShipFrequency = 0.5f;
+        [SerializeField, Range(0.1f, 10f)] private float _maxShipFrequency = 5f;
+
+        [SerializeField, Range(-3f, 3f)] private float _minShipOffset = -1f;
+        [SerializeField, Range(-3f, 3f)] private float _maxShipOffset = 1f;
+
         // ─────────────────────────────────────────────
         // Player Wave
         // ─────────────────────────────────────────────
@@ -98,20 +109,12 @@ namespace Route24.GameOff
             _visibilityMask = new bool[_resolution];
             RegenerateNoiseMask();
 
-            _targetAmplitude = _shipAmplitude;
-            _currentAmplitude = _shipAmplitude;
-
-            if (_shipHasVariation)
-                ScheduleNextState();
-
-            StartCoroutine(AdjustSignalStrengthRoutine());
-            UpdateUIText();
         }
 
         // ─────────────────────────────────────────────
         // Public API
         // ─────────────────────────────────────────────
-        
+
         public void SetPlayerAmplitude(float value) =>
             _playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);
         
@@ -120,16 +123,33 @@ namespace Route24.GameOff
         
         public void SetPlayerOffset(float value) =>
             _playerTimeOffset = Mathf.Clamp(value, -3, 3f);
-        
+
+        public void StartNewSignalGame()
+        {
+            gameObject.SetActive(true);
+
+            SetRandomShipSettings();
+
+            _targetAmplitude = _shipAmplitude;
+            _currentAmplitude = _shipAmplitude;
+
+            if (_shipHasVariation)
+                ScheduleNextState();
+
+            StartCoroutine(AdjustSignalStrengthRoutine());
+            UpdateUIText();
+            _signalsStopped = false;
+        }
+
         public void StopSignals()
         {
+
+            gameObject.SetActive(false);
+
             _signalsStopped = true;
 
             _shipAmplitude = 0.05f;
             _shipFrequency = 0.5f;
-
-            _playerAmplitude = 0.05f;
-            _playerFrequency = 0.5f;
 
             _currentAmplitude = _shipAmplitude;
             _signalStrength = 1f;
@@ -166,7 +186,8 @@ namespace Route24.GameOff
             DrawWave(vh, _playerColor, _playerAmplitude, _playerFrequency, _timeOffset + _playerTimeOffset, false, false);
         }
 
-        /// <summary>Draws an individual waveform line.</summary>
+        [SerializeField, Range(0.1f, 5f)] private float _waveLengthMultiplier = 1f; // Add this at class level
+
         private void DrawWave(VertexHelper vh, Color color, float amplitude, float frequency, float timeOffset, bool allowState, bool useNoise)
         {
             float width = rectTransform.rect.width;
@@ -186,7 +207,7 @@ namespace Route24.GameOff
                 float x = i * step;
                 float y = flatline
                     ? centerY
-                    : centerY + Mathf.Sin((x / width) * frequency * Mathf.PI * 2f + timeOffset) * ampUsed * height * 0.5f;
+                    : centerY + Mathf.Sin((x / width) * frequency * Mathf.PI * 2f * _waveLengthMultiplier + timeOffset) * ampUsed * height * 0.5f;
 
                 Vector2 point = new Vector2(x, y);
 
@@ -221,6 +242,7 @@ namespace Route24.GameOff
                 prevValid = showVertex;
             }
         }
+
 
         /// <summary>Main update loop for signal animation and behavior.</summary>
         private void Update()
@@ -376,6 +398,13 @@ namespace Route24.GameOff
             _currentState = SignalState.Normal;
             if (resumeMatch)
                 _canMatch = true;
+        }      
+
+        private void SetRandomShipSettings()
+        {
+            _shipAmplitude = Random.Range(_minShipAmplitude, _maxShipAmplitude);
+            _shipFrequency = Random.Range(_minShipFrequency, _maxShipFrequency);
+            _shipTimeOffset = Random.Range(_minShipOffset, _maxShipOffset);
         }
     }
 }
