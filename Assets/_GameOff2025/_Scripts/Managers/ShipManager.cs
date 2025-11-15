@@ -61,6 +61,8 @@ namespace Route24.GameOff
             Debug.Log($"[GameManager] {_currentShipProfile.ShipName} ready for inspection.");
             _gameManager.OnShipReadyForInspection();
             _eventHub?.Publish(new ShipArrivedForInspectionEvent(currentShipIndex, _currentShipProfile));
+            
+            AudioTestManager.Instance.PlaySFX("SHIP_ARRIVED");
         }
         
         public bool TrySpawnNextShip()
