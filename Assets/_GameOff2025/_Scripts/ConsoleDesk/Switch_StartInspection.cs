@@ -3,9 +3,10 @@ using UnityEngine;
 
 namespace Route24.GameOff
 {
-    public class Switch_StartInspection : MonoBehaviour, IInteractable, ISceneInitializable
+    public class Switch_StartInspection : MonoBehaviour, ISceneInitializable
     {
         [SerializeField] private IndicatorLight _indicatorLight;
+        [SerializeField] private BigButton _bigButton;
         
         public string interactionText = "Start Inspection [E]";
         
@@ -21,6 +22,16 @@ namespace Route24.GameOff
             _eventHub.Subscribe<InspectionStartedEvent>(e => SetLightOff());
 
             SetLightOff();
+
+            if (_bigButton)
+            {
+                _bigButton.SetOnInteract(OnInteract);
+                _bigButton.SetCanInteractAction(CanInteract);
+                _bigButton.SetInteractionText(GetInteractionText);
+                _bigButton.SetCanShowMassage(CanShowMessage);
+            }
+            else
+                Debug.LogWarning($"[Switch_StartInspection] _big button is null, so switch cannot be interactable");
         }
 
         public string GetInteractionText() => interactionText;
