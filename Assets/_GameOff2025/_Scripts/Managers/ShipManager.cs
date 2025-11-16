@@ -1,18 +1,25 @@
+using System;
 using System.Collections.Generic;
 using Route24.Core;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Route24.GameOff
 {
     public class ShipManager : MonoBehaviour, IService, IInitializable
     {
         public int InitializationPriority => 5;
+
+        private const int _arrayLength = 10; // max length for random generation ship arrays
         
         private GameManager _gameManager;
+        private CargoManifestManager _cargoManifestManager;
         private EventHub _eventHub;
         
         [Header("SO References")]
-        [SerializeField] private List<ShipsConfig> _shipsConfig;
+        [SerializeField] private List<DayConfig> _dayConfigs;
+        
+        private List<ShipProfile> _shipProfiles = new List<ShipProfile>(10);
 
         #region  Spawn Transforms
         private Transform _shipSpawn;
@@ -29,11 +36,13 @@ namespace Route24.GameOff
         
         public void Initialize()
         {
-            print("[ShipManager] Initialized.");
             _gameManager = ServiceLocator.Get<GameManager>();
+            _cargoManifestManager = ServiceLocator.Get<CargoManifestManager>();
             _eventHub = ServiceLocator.Get<EventHub>();
+            
+            _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
         }
-        
+
         public void RegisterSceneWaypoints(Transform spawn, Transform dock, Transform exit, Transform sink)
         {
             _shipSpawn = spawn;
@@ -47,13 +56,15 @@ namespace Route24.GameOff
         public void StartNewDay(int day)
         {
             _day = day;
-            if(_day <= 0 || _day >= _shipsConfig.Count)
+            if(_day <= 0 || _day >= _dayConfigs.Count)
             {
                 Debug.LogError("[ShipManager] Invalid day index for ship config. auto set to 1");
                 _day = 1;
             }
-            
+
             currentShipIndex = -1;
+            
+            GenerateRandomShipProfiles(_dayConfigs[_day]);
         }
         
         public void OnShipReadyForInspection(ShipController ship)
@@ -63,17 +74,17 @@ namespace Route24.GameOff
             _eventHub?.Publish(new ShipArrivedForInspectionEvent(currentShipIndex, _currentShipProfile));
         }
         
-        public bool TrySpawnNextShip()
+        public void SpawnNewShip()
         {
             currentShipIndex++;
 
-            if (currentShipIndex >= _shipsConfig[_dayIndex].ShipProfiles.Length)
+            if (currentShipIndex >= _shipProfiles.Count)
             {
-                Debug.Log("[ShipManager] No more ships for today.");
-                return false;
+                currentShipIndex = 0;
+                GenerateRandomShipProfiles(_dayConfigs[_day]);
             }
 
-            _currentShipProfile = _shipsConfig[_dayIndex].ShipProfiles[currentShipIndex].Profile;
+            _currentShipProfile = _shipProfiles[currentShipIndex];
             
             if (_currentShipProfile.ShipPrefab != null && _shipSpawn != null)
             {
@@ -86,8 +97,6 @@ namespace Route24.GameOff
             else 
                 Debug.Log("[ShipManager] failed to spawn ship.");
             
-            
-            return true;
         }
         
         public void HandleInspectionComplete(bool timedOut, bool approved)
@@ -101,6 +110,7 @@ namespace Route24.GameOff
             {
                 Debug.Log($"[ShipManager] Ship approved, exiting normally.");
                 _currentShipController?.MoveToExit();
+                _currentShipController = null;
             }
             else
             {
@@ -109,7 +119,54 @@ namespace Route24.GameOff
             }
         }
         
-        public float GetInspectionTimeForCurrentShip() => _currentShipProfile.ShipInspectionTime;
         public ShipProfile GetCurrentShipProfile() => _currentShipProfile;
+
+        private void SetShipProfilesFromDayConfig(DayConfig dayConfig)
+        {
+            _shipProfiles.Clear();                
+            
+            foreach (var shipEntry in dayConfig.ShipProfiles)
+                _shipProfiles.Add(shipEntry.Profile);
+        }
+        
+        private void GenerateRandomShipProfiles(DayConfig dayConfig)
+        {
+            _shipProfiles.Clear();
+
+            Span<bool> validIndices = stackalloc bool[_arrayLength];
+            Span<bool> timedIndices = stackalloc bool[_arrayLength];
+
+            validIndices.SetRandomTrueValues(dayConfig.ValidPercentage);
+            timedIndices.SetRandomTrueValues(dayConfig.TimedShipRatio);
+
+
+            for (int i = 0; i < _arrayLength; i++) 
+                _shipProfiles.Add(new ShipProfile()
+                {
+                    ShipName = ShipNames.GetRandomShipName(),
+                    IsValid = validIndices[i],
+                    ShipInspectionTime = GetShipTime(timedIndices[i]),
+                    CargoList = _cargoManifestManager.GenerateRandomCargoList(validIndices[i], dayConfig.MinCargoCount, dayConfig.MaxCargoCount),
+                    ShipPrefab = GetRandomShipPrefab()
+                });
+        }
+
+        private GameObject GetRandomShipPrefab()
+        {
+            return Resources.Load<GameObject>("Prefabs/Ship/ShipModel");
+        }
+
+        private int GetShipTime(bool isTimed)
+        {
+            if (!isTimed)
+                return -1;
+
+            return Random.Range(25, 35);
+        }
+
+        private void OnDayEnded(DayEndedEvent obj)
+        {
+            _currentShipController?.Decline();
+        }
     }
 }

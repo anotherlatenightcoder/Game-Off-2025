@@ -3,10 +3,12 @@ using UnityEngine;
 
 namespace Route24.GameOff
 {
-    public class Button_Decline : MonoBehaviour, IInteractable
+    public class Button_Decline : MonoBehaviour
     {
+        [SerializeField] private BigButton _bigButton;
         [SerializeField] private IndicatorLight _indicatorLight;
         [SerializeField] private string interactionText = "Decline [E]";
+
 
         private GameManager _gameManager;
         private EventHub _eventHub;
@@ -24,6 +26,16 @@ namespace Route24.GameOff
             _eventHub.Subscribe<DayEndedEvent>(e => Deactivate());
 
             Deactivate();
+
+            if (_bigButton)
+            {
+                _bigButton.SetOnInteract(OnInteract);
+                _bigButton.SetCanInteractAction(CanInteract);
+                _bigButton.SetInteractionText(GetInteractionText);
+                _bigButton.SetCanShowMassage(CanShowMessage);
+            }
+            else
+                Debug.LogWarning($"[Button_Decline] _big button is null, so switch cannot be interactable");
         }
 
         public string GetInteractionText() => interactionText;
