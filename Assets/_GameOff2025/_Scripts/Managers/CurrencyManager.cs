@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Route24.Core;
 using UnityEngine;
@@ -7,17 +8,37 @@ namespace Route24.GameOff
     public class CurrencyManager : MonoBehaviour, IService, IInitializable
     {
         public int InitializationPriority => 666;
-        
         public int CurrencyAmount { get; private set; }
 
         private List<Transaction> _transactionsList = new(200);
         
-        public void Initialize(){}
         public bool HasEnoughCurrency(int amount) => CurrencyAmount >=  amount; 
-        
         public List<Transaction> GetTransactions() => _transactionsList;
         
+        EventHub _eventHub;
+
+        public void Initialize()
+        {
+            _eventHub = ServiceLocator.Get<EventHub>();
+            _eventHub.Subscribe<DayStartedEvent>(OnDayStarted);
+            _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionCompleted);
+        }
+
+        private void OnDestroy()
+        {
+            _eventHub.Unsubscribe<DayStartedEvent>(OnDayStarted);
+            _eventHub.Unsubscribe<InspectionCompletedEvent>(OnInspectionCompleted);
+        }
         
+        public void AddTransaction(Transaction transaction)
+        {
+            _transactionsList.Add(transaction);
+            if(transaction.Type == ETransaction.income)
+                CurrencyAmount += transaction.Amount;
+            else
+                CurrencyAmount -= transaction.Amount;
+        }
+
         public void AddCurrency(int amount, string reason)
         {
             var transaction = new Transaction
@@ -55,6 +76,21 @@ namespace Route24.GameOff
             
             RemoveCurrency(amount, reason);
             return true;
+        }
+        
+        private void OnDayStarted(DayStartedEvent dayStartedEvent) // did this assuming we dont care about previous days except for the savings. i can update this if necessery
+        {
+            _transactionsList.Clear();
+            _transactionsList.Add(Transactions.GetSavings(CurrencyAmount));
+        }
+
+        private void OnInspectionCompleted(InspectionCompletedEvent eventData)
+        {
+            if(eventData.Approved)
+                if(eventData.Ship.IsValid)
+                    AddTransaction(Transactions.GetApprovalSalary());
+                else
+                    AddTransaction(Transactions.GetWrongApprovalPenalty());
         }
 
         private TimeStamp GetTimeStamp()
