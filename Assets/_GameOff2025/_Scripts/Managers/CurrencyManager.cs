@@ -11,22 +11,25 @@ namespace Route24.GameOff
         public int CurrencyAmount { get; private set; }
 
         private List<Transaction> _transactionsList = new(200);
+        private List<Transaction> _regularExpenseList = new();
+        private List<TransactionOption> _expenseOptions = new(); // rent, upgrades
         
         public bool HasEnoughCurrency(int amount) => CurrencyAmount >=  amount; 
         public List<Transaction> GetTransactions() => _transactionsList;
+        public List<Transaction> GetRegularExpenses => _regularExpenseList;
+        public List<TransactionOption> GetExpenseOptions => _expenseOptions;
+        
         
         EventHub _eventHub;
 
         public void Initialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
-            _eventHub.Subscribe<DayStartedEvent>(OnDayStarted);
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionCompleted);
         }
 
         private void OnDestroy()
         {
-            _eventHub.Unsubscribe<DayStartedEvent>(OnDayStarted);
             _eventHub.Unsubscribe<InspectionCompletedEvent>(OnInspectionCompleted);
         }
         
@@ -77,13 +80,30 @@ namespace Route24.GameOff
             RemoveCurrency(amount, reason);
             return true;
         }
-        
-        private void OnDayStarted(DayStartedEvent dayStartedEvent) // did this assuming we dont care about previous days except for the savings. i can update this if necessery
+
+        public void AddRegularExpenses(Transaction transaction) => _regularExpenseList.Add(transaction);
+        public void AddPossibleExpense(TransactionOption transactionOption) => _expenseOptions.Add(transactionOption);
+
+        public void RemoveRegularExpenses(Transaction transaction)
         {
+            for (int i = 0; i < _regularExpenseList.Count; i++)
+                if (string.Equals(_regularExpenseList[i].Reason, transaction.Reason))
+                    _regularExpenseList.RemoveAt(i);
+        } 
+        public void RemovePossibleExpense(Transaction transaction)
+        { 
+            for (int i = 0; i < _expenseOptions.Count; i++)
+                if(string.Equals(_expenseOptions[i].Transaction.Reason, transaction.Reason))
+                    _expenseOptions.RemoveAt(i);
+        } 
+        
+        public void ResetSavings(int amount)
+        {
+            CurrencyAmount = amount;
             _transactionsList.Clear();
             _transactionsList.Add(Transactions.GetSavings(CurrencyAmount));
         }
-
+        
         private void OnInspectionCompleted(InspectionCompletedEvent eventData)
         {
             if(eventData.Approved)

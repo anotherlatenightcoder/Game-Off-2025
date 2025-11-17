@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Route24.GameOff
 {
@@ -18,6 +19,16 @@ namespace Route24.GameOff
 
                 span[index] = true;
             }
+        }
+
+        public static List<TransactionOption> ConvertToOptionsList(this List<Transaction> transactions)
+        {
+            List<TransactionOption> options = new List<TransactionOption>(transactions.Count);
+            
+            foreach (var t in transactions)
+                options.Add(new TransactionOption(t));
+            
+            return options;
         }
     }
 }

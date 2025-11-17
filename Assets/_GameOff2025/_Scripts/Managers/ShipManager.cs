@@ -166,7 +166,8 @@ namespace Route24.GameOff
 
         private void OnDayEnded(DayEndedEvent obj)
         {
-            _currentShipController?.Decline();
+            if(_currentShipController)
+                _currentShipController.Decline();
         }
     }
 }

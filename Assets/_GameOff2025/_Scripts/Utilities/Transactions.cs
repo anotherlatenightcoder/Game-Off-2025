@@ -34,26 +34,34 @@ namespace Route24.GameOff
             };
         }
 
-        public static List<Transaction> ConvetToUIList(List<Transaction> transactions)
+        public static Transaction Day1Upgrade()
+        {
+            return new Transaction()
+            {
+                Type = ETransaction.expense,
+                Amount = 10,
+                Reason = ConstStrings.Day1Upgrade
+            };
+        }
+
+        public static List<TransactionOption> ConvertToUIList(List<Transaction> transactions)
         {
             // Copy the list to not modify the original
-            transactions = new List<Transaction>(transactions);
+            var workingList = new List<Transaction>(transactions);
 
             // Find all Ship_APPROVE transactions
-            var shipApproveList = transactions.FindAll(t => t.Reason == ConstStrings.Ship_APPROVE);
+            var shipApproveList = workingList.FindAll(t => t.Reason == ConstStrings.Ship_APPROVE);
 
             if (shipApproveList.Count > 0)
             {
                 // Remove all Ship_APPROVE transactions
-                transactions.RemoveAll(t => t.Reason == ConstStrings.Ship_APPROVE);
+                workingList.RemoveAll(t => t.Reason == ConstStrings.Ship_APPROVE);
 
                 // Combine them into one
                 int totalAmount = 0;
 
                 foreach (var t in shipApproveList)
-                {
                     totalAmount += t.Amount;
-                }
 
                 // Create the summary transaction
                 var combined = new Transaction
@@ -64,10 +72,22 @@ namespace Route24.GameOff
                 };
 
                 // Insert the combined transaction at the first original index
-                transactions.Insert(1, combined);
+                
+                if(workingList.Count >=1)
+                    workingList.Insert(1, combined);
+                else 
+                    workingList.Add(combined);
             }
 
-            return transactions;
+            // Convert to STransactionUI list
+            var uiList = new List<TransactionOption>();
+
+            foreach (var t in workingList)
+            {
+                uiList.Add(new TransactionOption(t)); // defaults: isPossibleExpense = false, isSelected = false
+            }
+
+            return uiList;
         }
 
     }

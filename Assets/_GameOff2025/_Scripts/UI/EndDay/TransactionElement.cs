@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,19 +18,36 @@ namespace Route24.GameOff
         [SerializeField] private Color _expenseColor = Color.red;
         [SerializeField] private Color _possibleExpenseColor = Color.red;
         
+        private Action _onSelectedCallback;
+        
+        private Transaction _transaction;
+        private bool _isSelected = false;
+        private Action _possibleTransactionCallback;
+        
+         private void Start()
+        {
+            _selectedButton.onClick.AddListener(OnSelectionButtonClicked);
+        }
+        
         public void Hide()
         {
             gameObject.SetActive(false);
+            _transaction = default;
+            _isSelected = false;
+            _possibleTransactionCallback = null;
         }
 
-        public void ShowPossibleTransaction(Transaction transaction, bool selected = false)
+        public void ShowPossibleTransaction(TransactionOption transactionOption)
         {
-            UpdateTexts(transaction);
+            _possibleTransactionCallback = transactionOption.OnExpenseMade;
+            _transaction = transactionOption.Transaction;
+            _isSelected = transactionOption.IsSelected;
+            UpdateTexts(_transaction);
             
-            if (selected)
+            if (_isSelected)
                 UpdateColorAndSprites(ETransactionUIState.expense);
             else
-                UpdateColorAndSprites(ETransactionUIState.income);
+                UpdateColorAndSprites(ETransactionUIState.possibleExpense);
 
             gameObject.SetActive(true);
             _selectedButton.gameObject.SetActive(true);
@@ -37,6 +55,8 @@ namespace Route24.GameOff
 
         public void ShowTransaction(Transaction transaction)
         {
+            _transaction = transaction;
+            _isSelected = true;
             UpdateTexts(transaction);
             
             if(transaction.Type == ETransaction.income)
@@ -46,6 +66,26 @@ namespace Route24.GameOff
 
             gameObject.SetActive(true);
             _selectedButton.gameObject.SetActive(false);
+        }
+        
+        public int GetCurrencyAffect()
+        {
+            if(!_isSelected)
+                return 0;
+            
+            int sign = _transaction.Type == ETransaction.income ? 1 : -1;
+            return sign * _transaction.Amount;
+        }
+        
+        public void SetSelectedCallback(Action callback)
+        {
+            _onSelectedCallback = callback;
+        }
+
+        public void TryFireExpenseCallback()
+        {
+            if(_isSelected)
+                _possibleTransactionCallback?.Invoke();
         }
 
         private void UpdateTexts(Transaction transaction)
@@ -79,6 +119,17 @@ namespace Route24.GameOff
                     _amountText.color = _possibleExpenseColor;
                     break;
             }
+        }
+        
+        private void OnSelectionButtonClicked()
+        {
+            _isSelected = !_isSelected;
+            _onSelectedCallback?.Invoke();
+            
+            if (_isSelected)
+                UpdateColorAndSprites(ETransactionUIState.expense);
+            else
+                UpdateColorAndSprites(ETransactionUIState.possibleExpense);
         }
     }
 }
