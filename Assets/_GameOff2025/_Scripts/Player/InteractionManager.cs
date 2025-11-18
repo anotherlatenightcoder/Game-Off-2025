@@ -16,16 +16,23 @@ namespace Route24.GameOff
 
         private Camera _cam;
         private IInteractable _currentTarget;
+        
+        private GameManager _gameManager;
 
         private void Start()
         {
             _cam = GetComponent<Camera>();
             if (interactionText) interactionText.text = "";
+
+            _gameManager = ServiceLocator.Get<GameManager>();
         }
 
         private void Update()
         {
-            if (GameManager.IsInFocusMode)
+            if(_gameManager.CurrentGameplayState == GameplayState.DayComplete)
+                return;
+            
+            if (GameManager.IsInFocusMode) 
             {
                 // Hide crosshair & text while in focus mode
                 if (crosshairDot) crosshairDot.enabled = false;

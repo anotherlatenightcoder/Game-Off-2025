@@ -64,7 +64,7 @@ namespace Route24.GameOff
             }
         }
         
-        private void StartNewDay()
+        public void StartNewDay()
         {
             Debug.Log($"=== Starting Day {currentDay} ===");
             
@@ -84,7 +84,7 @@ namespace Route24.GameOff
 
         public void OnShipExitComplete()
         {
-            if(state != GameplayState.DayComplete)
+            if(state == GameplayState.WaitingForShip)
                 StartCoroutine(WaitThenNextShip());
         }
 
@@ -114,7 +114,9 @@ namespace Route24.GameOff
         private IEnumerator WaitThenNextShip()
         {
             yield return new WaitForSeconds(transitionDelay);
-
+            if (state != GameplayState.WaitingForShip)
+                yield break;
+            
             _shipManager.SpawnNewShip();
             state = GameplayState.WaitingForShip;
    
@@ -128,15 +130,8 @@ namespace Route24.GameOff
             _eventHub?.Publish(new DayEndedEvent(currentDay));
             
             currentDay++;
-            StartCoroutine(WaitThenNextDay());
         }
         
-        private IEnumerator WaitThenNextDay()
-        {
-            yield return new WaitForSeconds(ConstGameStats.DelayBetweenDays);
-            StartNewDay();
-        }
-
         private IEnumerator DayTimeCoroutine()
         {
             yield return new WaitForSeconds(ConstGameStats.DayTime);
