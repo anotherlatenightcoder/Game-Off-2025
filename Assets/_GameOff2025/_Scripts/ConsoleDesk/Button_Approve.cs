@@ -7,6 +7,7 @@ namespace Route24.GameOff
     {
         [SerializeField] private IndicatorLight _indicatorLight;
         [SerializeField] private string interactionText = "Approve [E]";
+        [SerializeField] private string _buttonSoundString = "";
 
         private GameManager _gameManager;
         private EventHub _eventHub;
@@ -48,6 +49,9 @@ namespace Route24.GameOff
             Debug.Log("[Button_Approve] Ship approved!");
             _indicatorLight?.SetLight(false);
             _gameManager?.CompleteInspection(true);
+            
+            if (_buttonSoundString != "")
+                AudioTestManager.Instance.PlaySFX(_buttonSoundString);
         }
 
         private void Activate()

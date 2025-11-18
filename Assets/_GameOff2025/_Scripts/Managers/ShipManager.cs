@@ -61,8 +61,6 @@ namespace Route24.GameOff
             Debug.Log($"[GameManager] {_currentShipProfile.ShipName} ready for inspection.");
             _gameManager.OnShipReadyForInspection();
             _eventHub?.Publish(new ShipArrivedForInspectionEvent(currentShipIndex, _currentShipProfile));
-            
-            AudioTestManager.Instance.PlaySFX("SHIP_ARRIVED");
         }
         
         public bool TrySpawnNextShip()
@@ -83,6 +81,9 @@ namespace Route24.GameOff
                 _currentShipController = shipInstance.GetComponent<ShipController>();
                 _currentShipController.Initialize(_shipSpawn, _shipDock, _shipExit, _shipSink);
                 _currentShipController.MoveToDock();
+                
+                AudioTestManager.Instance.PlaySFX("SHIP_SPAWN");
+                
                 Debug.Log($"Ship incoming: {_currentShipProfile.ShipName}");
             }
             else 

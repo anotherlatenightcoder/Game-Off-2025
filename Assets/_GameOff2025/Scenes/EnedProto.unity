@@ -1785,7 +1785,7 @@ GameObject:
   - component: {fileID: 504449953}
   - component: {fileID: 504449952}
   m_Layer: 0
-  m_Name: Cube (1)
+  m_Name: Roof
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2789,6 +2789,7 @@ MonoBehaviour:
   _minAngle: -30
   _maxAngle: 30
   _toggleDuration: 0.5
+  _toggleSoundString: SLIDER_TOGGLE
 --- !u!65 &922537228
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3489,6 +3490,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.Button_Approve
   _indicatorLight: {fileID: 1647667081}
   interactionText: 'Approve [E]'
+  _buttonSoundString: APPROVE_BUTTON
 --- !u!1 &1089851978
 GameObject:
   m_ObjectHideFlags: 0
@@ -4163,6 +4165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.Button_Decline
   _indicatorLight: {fileID: 1746159327}
   interactionText: 'Decline [E]'
+  _buttonSoundString: DECLINE_BUTTON
 --- !u!1 &1344232554
 GameObject:
   m_ObjectHideFlags: 0
@@ -4721,7 +4724,25 @@ MonoBehaviour:
   backgroundMusic: {fileID: 8300000, guid: 8f5a8f4fb3875384982faedf9d84764d, type: 3}
   musicVolume: 0.2
   soundEffects:
+  - key: SHIP_SPAWN
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
   - key: SHIP_ARRIVED
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: SHIP_APPROVED
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: SHIP_DECLINED
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: SHIP_SINK
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: SHIP_EXIT
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: GENERIC_BUTTON
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: APPROVE_BUTTON
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: DECLINE_BUTTON
+    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+  - key: SLIDER_TOGGLE
     clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
 --- !u!1 &1556288255
 GameObject:
@@ -5371,7 +5392,7 @@ GameObject:
   - component: {fileID: 1672993838}
   - component: {fileID: 1672993837}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6912,6 +6933,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.Switch_StartInspection
   _indicatorLight: {fileID: 1006675382}
+  _buttonSoundString: GENERIC_BUTTON
   interactionText: 'Start Inspection [E]'
 --- !u!1 &2072807486
 GameObject:

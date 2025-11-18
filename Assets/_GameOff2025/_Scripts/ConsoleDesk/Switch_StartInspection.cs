@@ -6,6 +6,7 @@ namespace Route24.GameOff
     public class Switch_StartInspection : MonoBehaviour, IInteractable, ISceneInitializable
     {
         [SerializeField] private IndicatorLight _indicatorLight;
+        [SerializeField] private string _buttonSoundString = "";
         
         public string interactionText = "Start Inspection [E]";
         
@@ -42,6 +43,9 @@ namespace Route24.GameOff
                 Debug.Log("Switch flipped — starting inspection!");
                 _indicatorLight?.SetLight(false);
                 _gameManager.StartInspection();
+                
+                if (_buttonSoundString != "")
+                    AudioTestManager.Instance.PlaySFX(_buttonSoundString);
             }
         }
         

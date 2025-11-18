@@ -11,6 +11,7 @@ namespace Route24.GameOff
         [SerializeField] private float _minAngle = -30f;
         [SerializeField] private float _maxAngle = 30f;
         [SerializeField] private float _toggleDuration = 0.5f;
+        [SerializeField] private string _toggleSoundString = "";
 
         private bool _isOn = false;
         private float _currentAngle = 0f;
@@ -49,6 +50,9 @@ namespace Route24.GameOff
                     StopCoroutine(_toggleRoutine);
                 _toggleRoutine = StartCoroutine(SmoothToggle(targetAngle));
             }
+
+            if (_toggleSoundString != "")
+                AudioTestManager.Instance.PlaySFX(_toggleSoundString);
 
             if (on)
                 _eventHub.Publish(new LeverActivatedEvent());
