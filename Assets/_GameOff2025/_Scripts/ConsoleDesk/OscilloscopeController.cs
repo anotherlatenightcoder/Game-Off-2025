@@ -25,7 +25,7 @@ namespace Route24.GameOff
 
         [Header("Knob Controls")]
         [SerializeField] private Knob3DController _speedKnob;
-        [SerializeField] private Knob3DController _amplitudeKnob;
+        [SerializeField] private Slider3DController _amplitudeKnob;
         [SerializeField] private Knob3DController _frequencyKnob;
 
         [Header("Settings")]
@@ -36,6 +36,7 @@ namespace Route24.GameOff
         private GameManager _gameManager;
         private bool _inFocus;
         private bool _focusCooldownActive;
+        private bool _inputBuffer;
 
         /// <summary>
         /// Called by the SceneObjectInitializer after core systems are ready.
@@ -60,23 +61,25 @@ namespace Route24.GameOff
         
         private void InitializeKnobs()
         {
-            Knob3DController[] knobs = { _speedKnob, _amplitudeKnob, _frequencyKnob };
-
-            foreach (var knob in knobs)
+            if (!_speedKnob || !_frequencyKnob)
             {
-                if (!knob)
-                {
-                    Debug.LogWarning($"[OscilloscopeController] Missing knob reference on {name}.");
-                    continue;
-                }
-
-                knob.InitializeLink(this);
+                Debug.LogWarning($"[OscilloscopeController] Missing knob reference on {name}.");
+                return;
             }
+
+            if (!_amplitudeKnob)
+            {
+                Debug.LogWarning($"[OscilloscopeController] Missing slider reference on {name}.");
+                return;
+            }
+
+            _speedKnob.InitializeLink(this);
+            _frequencyKnob.InitializeLink(this);
+            _amplitudeKnob.InitializeLink(this);
 
             _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerOffset;
             _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
             _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
-
         }
 
         private void SetInitialWaveSettings()
@@ -88,12 +91,17 @@ namespace Route24.GameOff
         
         private void Update()
         {
-            if (_inFocus && Input.GetKeyDown(KeyCode.E))
+            if (_inFocus && Input.GetKeyDown(KeyCode.E) && !_inputBuffer)
+            {
+                _inputBuffer = true;
                 SetFocus(false);
+                StartCoroutine(ClearInputBuffer());
+            }
         }
         
         private void SetFocus(bool state)
         {
+            print($"state is {state}");
             if (state == _inFocus) return;
 
             _inFocus = state;
@@ -129,6 +137,12 @@ namespace Route24.GameOff
             yield return new WaitForSeconds(_exitCooldown);
             _focusCooldownActive = false;
         }
+
+        private IEnumerator ClearInputBuffer()
+        {
+            yield return new WaitForEndOfFrame();
+            _inputBuffer = false;
+        }
         
         public string GetInteractionText() => _inFocus ? string.Empty : "Access Oscilloscope [E]";
         
@@ -146,6 +160,14 @@ namespace Route24.GameOff
             return !_inFocus && _gameManager;
         }
         
-        public void OnInteract() => SetFocus(!_inFocus);
+        public void OnInteract()
+        {
+            if (!_inputBuffer)
+            {
+                _inputBuffer = true;
+                SetFocus(!_inFocus);
+                StartCoroutine(ClearInputBuffer());
+            }
+        }
     }
 }
