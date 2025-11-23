@@ -26,6 +26,35 @@ namespace Route24.Core
         public string SceneName;
         public SceneUnloadedEvent(string sceneName) => SceneName = sceneName;
     }
+    
+    // ───────────────────────────────
+    // Tutorial-related events
+    // ───────────────────────────────
+    
+    /// <summary>
+    /// Fires once the scene loads.
+    /// </summary>
+    public struct TutorialStartedEvent { }
+    
+    /// <summary>
+    /// Fired when the player turns on the main console / power switch.
+    /// </summary>
+    public struct ConsolePoweredOnEvent { }
+
+    /// <summary>
+    /// Fired when the oscilloscope tutorial calibration test completes.
+    /// </summary>
+    public struct ScopeCalibrationCompleteEvent { }
+
+    /// <summary>
+    /// Fired when any 4-digit test code is entered during the tutorial.
+    /// </summary>
+    public struct KeypadTestEnteredEvent { }
+
+    /// <summary>
+    /// Fired when the player pulls the lever to open the docking gates and start Day 1.
+    /// </summary>
+    public struct DockGatesOpenedEvent { }
 
     // ───────────────────────────────
     // Game-related events

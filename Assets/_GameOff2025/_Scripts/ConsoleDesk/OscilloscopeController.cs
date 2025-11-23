@@ -102,7 +102,12 @@ namespace Route24.GameOff
             if (state)
             {
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
-                _waveformRenderer.StartNewSignalGame();
+                
+                if (IsTutorialMode())
+                    SetupTutorialWave();
+                else
+                    _waveformRenderer.StartNewSignalGame();
+                
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -118,6 +123,39 @@ namespace Route24.GameOff
                 StartCoroutine(FocusCooldownRoutine());
             }
         }
+        
+        private bool IsTutorialMode()
+        {
+            return _gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                   TutorialController.Instance.TutorialStep1Completed &&
+                   !TutorialController.Instance.TutorialStep2Completed;
+        }
+        
+        // This is to load up some dummy data for the tutorial to test
+        private void SetupTutorialWave()
+        {
+            // Force oscilloscope UI visible
+            if (_oscilloscopeUI)
+                _oscilloscopeUI.SetActive(true);
+
+            // Disable all random ship variation
+            _waveformRenderer.StopSignals();
+
+            // Turn on manual mode (no randomness, no matching surprises)
+            _waveformRenderer.gameObject.SetActive(true);
+
+            // Tutorial: Set a fixed “target” wave
+            // All axes match except amplitude
+            _waveformRenderer.SetTutorialModeWave(
+                shipAmplitude: 0.6f,     // target
+                shipFrequency: 3f,
+                shipOffset: 0f,
+                playerAmplitude: 0.3f,   // wrong, needs adjusting
+                playerFrequency: 3f,
+                playerOffset: 0f
+            );
+        }
+
 
         /// <summary>
         /// Enforces a short cooldown after exiting focus mode to prevent
@@ -134,16 +172,29 @@ namespace Route24.GameOff
         
         public bool CanInteract()
         {
-            // UNCOMMENT AFTER TESTING:
-            // return !_inFocus && !_focusCooldownActive && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
-            return !_inFocus && !_focusCooldownActive && _gameManager;
+            if (_inFocus || _focusCooldownActive || _gameManager == null)
+                return false;
+            
+            // Allow access during normal gameplay inspection
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+            
+            // Case for the tutorial, but only after step 1 has been completed
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                TutorialController.Instance.TutorialStep1Completed)
+                return true;
+
+            return false;
         }
         
         public bool CanShowMessage()
         {
-            // UNCOMMENT AFTER TESTING:
-            // return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
-            return !_inFocus && _gameManager;
+            if (_inFocus) return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+                return TutorialController.Instance.TutorialStep1Completed;
+            
+            return _gameManager.CurrentGameplayState == GameplayState.Inspecting;
         }
         
         public void OnInteract() => SetFocus(!_inFocus);

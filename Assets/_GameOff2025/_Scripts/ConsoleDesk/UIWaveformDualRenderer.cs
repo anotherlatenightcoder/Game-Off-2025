@@ -1,4 +1,5 @@
 using System.Collections;
+using Route24.Core;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -97,7 +98,10 @@ namespace Route24.GameOff
         private bool _isLocked;
         private bool _canMatch = true;
         private bool _signalsStopped = false;
-
+        
+        private bool _tutorialMode = false;
+        private float _tutorialShipAmp, _tutorialShipFreq, _tutorialShipOffset;
+        private float _tutorialPlayerAmp, _tutorialPlayerFreq, _tutorialPlayerOffset;
 
         // ─────────────────────────────────────────────
         // Initialization
@@ -155,6 +159,36 @@ namespace Route24.GameOff
             _signalStrength = 1f;
 
             Debug.Log("[UIWaveform] Signals stopped — flatline.");
+        }
+        
+        public void SetTutorialModeWave(
+            float shipAmplitude,
+            float shipFrequency,
+            float shipOffset,
+            float playerAmplitude,
+            float playerFrequency,
+            float playerOffset)
+        {
+            _tutorialMode = true;
+
+            _tutorialShipAmp = shipAmplitude;
+            _tutorialShipFreq = shipFrequency;
+            _tutorialShipOffset = shipOffset;
+
+            _tutorialPlayerAmp = playerAmplitude;
+            _tutorialPlayerFreq = playerFrequency;
+            _tutorialPlayerOffset = playerOffset;
+
+            _shipAmplitude = shipAmplitude;
+            _shipFrequency = shipFrequency;
+            _shipTimeOffset = shipOffset;
+
+            _playerAmplitude = playerAmplitude;
+            _playerFrequency = playerFrequency;
+            _playerTimeOffset = playerOffset;
+
+            _currentMatchPercent = 0f;
+            _holdTimer = 0f;
         }
 
         // ─────────────────────────────────────────────
@@ -249,6 +283,13 @@ namespace Route24.GameOff
         {
             if (!Application.isPlaying || _signalsStopped)
                 return;
+            
+            if (_tutorialMode)
+            {
+                TutorialMatchCheck();
+                SetVerticesDirty();
+                return;
+            }
 
             //if (_shipHasVariation)  // this is making the game harder.
             //    HandleShipBehavior();
@@ -261,6 +302,39 @@ namespace Route24.GameOff
             UpdateUIText();
             SetVerticesDirty();
         }
+        
+        private void TutorialMatchCheck()
+        {
+            float diffAmp = Mathf.Abs(_playerAmplitude - _shipAmplitude);
+            float diffFreq = Mathf.Abs(_playerFrequency - _shipFrequency);
+            float diffOff = Mathf.Abs(_playerTimeOffset - _shipTimeOffset);
+
+            // In tutorial, we only want amplitude difference to matter
+            _currentMatchPercent = Mathf.Clamp01(1f - diffAmp) * 100f;
+
+            if (_currentMatchPercent >= 95f) // Requires minimal tweaking
+            {
+                _holdTimer += Time.deltaTime;
+
+                if (_holdTimer > 1.5f) // Shorter hold delay for tutorial
+                {
+                    _tutorialMode = false;
+                    Debug.Log("[Tutorial] Oscilloscope Calibration Complete!");
+
+                    // Fire event:
+                    ServiceLocator.Get<EventHub>()?.Publish(new ScopeCalibrationCompleteEvent());
+
+                    StopSignals(); // Hide after completion
+                }
+            }
+            else
+            {
+                _holdTimer = 0;
+            }
+
+            UpdateUIText(); // update match %
+        }
+
 
         /// <summary>Updates text fields with current match and hold values.</summary>
         private void UpdateUIText()

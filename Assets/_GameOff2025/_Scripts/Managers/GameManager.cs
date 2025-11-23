@@ -20,6 +20,7 @@ namespace Route24.GameOff
         private EventHub _eventHub;
         private bool inspectionActive = false;
         private Coroutine _dayTimerCoroutine;
+        private bool _tutorialCompleted = false;
         
         public static void SetFocusMode(bool value)
         {
@@ -35,7 +36,8 @@ namespace Route24.GameOff
 
         private void OnSceneLoaded(SceneLoadedEvent scene)
         {
-            StartCoroutine(DelayedStartOfDay());
+            // StartCoroutine(DelayedStartOfDay());
+            StartCoroutine(StartTutorialRoutine());
         }
         
         private IEnumerator DelayedStartOfDay()
@@ -66,6 +68,9 @@ namespace Route24.GameOff
         
         public void StartNewDay()
         {
+            if (CurrentGameplayState == GameplayState.Tutorial)
+                return;
+            
             Debug.Log($"=== Starting Day {currentDay} ===");
             
             _eventHub?.Publish(new DayStartedEvent(currentDay)); // CargoManifestManager should learn new day start before ShipManager
@@ -136,6 +141,25 @@ namespace Route24.GameOff
         {
             yield return new WaitForSeconds(ConstGameStats.DayTime);
             EndOfDay();
+        }
+        
+        private IEnumerator StartTutorialRoutine()
+        {
+            state = GameplayState.Tutorial;
+            
+            yield return new WaitForSeconds(1.0f);
+            
+            _eventHub?.Publish(new TutorialStartedEvent());
+            
+            while (!_tutorialCompleted)
+                yield return null;
+
+            StartNewDay();
+        }
+
+        public void CompleteTutorial()
+        {
+            _tutorialCompleted = true;
         }
     }
 }
