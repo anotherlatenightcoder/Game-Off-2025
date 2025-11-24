@@ -107,18 +107,6 @@ namespace Route24.GameOff
             }
         }
 
-        public void UpdateStepText(int stepIndex, string newText)
-        {
-            switch (stepIndex)
-            {
-                case 1: _step1Text.text = newText; break;
-                case 2: _step2Text.text = newText; break;
-                case 3: _step3Text.text = newText; break;
-                case 4: _step4Text.text = newText; break;
-                case 5: _step5Text.text = newText; break;
-            }
-        }
-
         private void ResetChecklistStyles()
         {
             ResetStyle(_step1Text);

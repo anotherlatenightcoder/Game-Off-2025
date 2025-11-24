@@ -72,22 +72,27 @@ namespace Route24.GameOff
         {
             _step1_PowerOn = true;
             _hasInteractedYet = true;
-            ShowNextStep(); // Calibrate the Oscilloscope
+            _tutorialUI.SetStepCompleted(1);
             HideSkipUI();
+            
+            // Send event to start boot sequence
+            var scope = ServiceLocator.Get<OscilloscopeController>();
+            if (scope != null)
+                scope.StartBootSequence();
         }
 
         private void OnScopeComplete(ScopeCalibrationCompleteEvent evt)
         {
-            if (_step1_PowerOn) return;
+            if (!_step1_PowerOn) return;
             _step2_ScopeCalibrated = true;
-            ShowNextStep(); // Enter 4-Digit Test Code
+            _tutorialUI.SetStepCompleted(2);
         }
         
         private void OnCodeEntered(KeypadTestEnteredEvent evt)
         {
             if (_step2_ScopeCalibrated) return;
             _step3_CodeEntered = true;
-            ShowNextStep(); // Pull the 'Dock Gates' Lever
+            _tutorialUI.SetStepCompleted(3);
         }
 
         private void OnGatesOpened(DockGatesOpenedEvent evt)
@@ -115,7 +120,6 @@ namespace Route24.GameOff
 
         private void ShowNextStep()
         {
-            // Set message and show UI
             _tutorialUI.SetStepCompleted(1);
         }
     }   
