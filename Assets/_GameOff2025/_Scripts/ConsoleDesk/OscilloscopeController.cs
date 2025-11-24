@@ -37,9 +37,6 @@ namespace Route24.GameOff
         private bool _focusCooldownActive;
         private bool _isBooting;
 
-        // NEW — Ensures tutorial init happens ONCE
-        private bool _tutorialWaveInitialized = false;
-
         /// <summary>
         /// Called by the SceneObjectInitializer after core systems are ready.
         /// Initializes references, disables UI by default, and sets up knob linkage.
@@ -91,10 +88,10 @@ namespace Route24.GameOff
                 knob.InitializeLink(this);
             }
 
-            // Hook once — never hook again
             _speedKnob.OnValueChanged += _waveformRenderer.SetPlayerOffset;
             _amplitudeKnob.OnValueChanged += _waveformRenderer.SetPlayerAmplitude;
             _frequencyKnob.OnValueChanged += _waveformRenderer.SetPlayerFrequency;
+
         }
 
         private void SetInitialWaveSettings()
@@ -103,6 +100,8 @@ namespace Route24.GameOff
             _waveformRenderer.SetPlayerAmplitude(_amplitudeKnob.GetCurrentValue());
             _waveformRenderer.SetPlayerFrequency(_frequencyKnob.GetCurrentValue());
             
+            // We should also set the knob rotation based on its starting value,
+            // otherwise when you click to drag it ends up jumping the wave
             _speedKnob.SetKnobRotationFromValue(_speedKnob.GetCurrentValue());
             _amplitudeKnob.SetKnobRotationFromValue(_amplitudeKnob.GetCurrentValue());
             _frequencyKnob.SetKnobRotationFromValue(_frequencyKnob.GetCurrentValue());
@@ -125,24 +124,10 @@ namespace Route24.GameOff
             {
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
                 _waveformRenderer.SetMatchUIVisible(true);
-
-                // NORMAL GAMEPLAY — reset each time
+                
                 if (!IsTutorialMode())
                 {
-                    _waveformRenderer.StartNewSignalGame();
                     _waveformRenderer.ResetMatchStateForNewSession();
-                }
-                else
-                {
-                    // TUTORIAL — ONLY initialize wave ONCE
-                    if (!_tutorialWaveInitialized)
-                    {
-                        SetupTutorialWave();
-                        _tutorialWaveInitialized = true;
-                    }
-
-                    // DO NOT reset tutorial waves on re-entry.
-                    _waveformRenderer.SetTutorialMatchUIState();
                 }
                 
                 Cursor.lockState = CursorLockMode.None;
@@ -170,10 +155,6 @@ namespace Route24.GameOff
                    !TutorialController.Instance.TutorialStep2Completed;
         }
 
-        // █████████████████████████████████████████████████████████
-        // BOOT SEQUENCE + TUTORIAL WAVE INITIALIZATION
-        // █████████████████████████████████████████████████████████
-
         public void StartBootSequence()
         {
             _isBooting = true;
@@ -185,26 +166,21 @@ namespace Route24.GameOff
             if (_isBooting)
             {
                 _isBooting = false;
-
-                // Run tutorial setup once
-                if (!_tutorialWaveInitialized)
-                {
-                    SetupTutorialWave();
-                    _tutorialWaveInitialized = true;
-                }
+                SetupTutorialWave();
             }
 
             _waveformRenderer.SetMatchUIVisible(true);
-
-            // DO NOT reset here during tutorial
-            if (!IsTutorialMode())
-                _waveformRenderer.ResetMatchStateForNewSession();
+            _waveformRenderer.ResetMatchStateForNewSession();
         }
         
+        // This is to load up some dummy data for the tutorial to test
         private void SetupTutorialWave()
         {
+            // Disable all random ship variation
             _waveformRenderer.StopSignals();
 
+            // Tutorial: Set a fixed “target” wave
+            // All axes match except amplitude
             _waveformRenderer.SetTutorialModeWave(
                 shipAmplitude: 0.6f,
                 shipFrequency: 3f,
@@ -217,6 +193,11 @@ namespace Route24.GameOff
         }
 
 
+        /// <summary>
+        /// Enforces a short cooldown after exiting focus mode to prevent
+        /// immediate re-entry or camera offset. It was due to a
+        /// strange bug I was having with the other console.
+        /// </summary>
         private IEnumerator FocusCooldownRoutine()
         {
             yield return new WaitForSeconds(_exitCooldown);
@@ -234,7 +215,7 @@ namespace Route24.GameOff
             if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
                 return true;
             
-            // During tutorial, allow only until step 2 ends
+            // Case for the tutorial, but only after step 1 has been completed
             if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
                 !TutorialController.Instance.TutorialStep2Completed)
                 return true;
