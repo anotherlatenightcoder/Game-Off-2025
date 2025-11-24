@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Route24.GameOff
 {
-    public class KeypadPowerSwitch : GenericSwitch
+    public class LightsPowerSwitch : GenericSwitch
     {
         [Header("Optional Light / Emission")]
         [SerializeField] protected Renderer _emissiveRenderer;
@@ -31,7 +31,7 @@ namespace Route24.GameOff
             
             _eventHub?.Subscribe<TutorialCompletedEvent>(OnTutorialCompleted);
         }
-        
+
         private void OnTutorialCompleted(TutorialCompletedEvent obj)
         {
             ForceOn(true);
@@ -41,7 +41,7 @@ namespace Route24.GameOff
         public override bool CanInteract()
         {
             // Lets only allow toggling this in the tutorial (maybe we reset it each day?)
-            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial && TutorialController.Instance.TutorialStep2Completed)
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial && TutorialController.Instance.TutorialStep4Completed)
                 return true;
             
             return false;
@@ -52,7 +52,7 @@ namespace Route24.GameOff
             base.OnToggledOn();
             SetEmission(true);
             
-            _eventHub?.Publish(new KeypadPoweredOnEvent());
+            _eventHub?.Publish(new LightsPoweredOnEvent());
         }
         
         protected override void OnToggledOff()
@@ -63,7 +63,7 @@ namespace Route24.GameOff
 
         public override bool CanShowMessage()
         {
-            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial && !IsActive && TutorialController.Instance.TutorialStep2Completed);
+            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial && !IsActive && TutorialController.Instance.TutorialStep4Completed);
         }
         
         protected void SetEmission(bool enabled)

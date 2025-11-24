@@ -19,6 +19,14 @@ namespace Route24.GameOff
             base.SceneInitialize();
             
             _gameManager = ServiceLocator.Get<GameManager>();
+            
+            _eventHub?.Subscribe<TutorialCompletedEvent>(OnTutorialCompleted);
+        }
+        
+        private void OnTutorialCompleted(TutorialCompletedEvent obj)
+        {
+            ForceOn(true);
+            SetEmission(true);
         }
 
         public override bool CanInteract()

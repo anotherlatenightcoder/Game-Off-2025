@@ -36,7 +36,6 @@ namespace Route24.GameOff
 
         private void OnSceneLoaded(SceneLoadedEvent scene)
         {
-            // StartCoroutine(DelayedStartOfDay());
             StartCoroutine(StartTutorialRoutine());
         }
         
@@ -44,6 +43,8 @@ namespace Route24.GameOff
         {
             Debug.Log("[GameManager] Preparing environment...");
             yield return new WaitForSeconds(ConstGameStats.DelayBeforeDayStart);
+            
+            state = GameplayState.WaitingForShip;
 
             Debug.Log("[GameManager] Starting first day...");
             StartNewDay();
@@ -153,13 +154,19 @@ namespace Route24.GameOff
             
             while (!_tutorialCompleted)
                 yield return null;
-
-            StartNewDay();
         }
 
         public void CompleteTutorial()
         {
+            if (_tutorialCompleted)
+                return;
+            
             _tutorialCompleted = true;
+            
+            _eventHub?.Publish(new TutorialCompletedEvent());
+            _eventHub?.Publish(new LightsPoweredOnEvent());
+            
+            StartCoroutine(DelayedStartOfDay());
         }
     }
 }

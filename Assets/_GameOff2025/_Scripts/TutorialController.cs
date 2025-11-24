@@ -14,6 +14,7 @@ namespace Route24.GameOff
         public bool TutorialStep2Completed => _step2_ScopeCalibrated;
         public bool TutorialStep3Completed => _step3_KeypadPowerOn;
         public bool TutorialStep4Completed => _step4_CodeEntered;
+        public bool TutorialStep5Completed => _step4_CodeEntered;
         public bool TutorialInProgress => _gameManager.CurrentGameplayState == GameplayState.Tutorial;
         public static TutorialController Instance;
         
@@ -24,7 +25,8 @@ namespace Route24.GameOff
         private bool _step2_ScopeCalibrated;
         private bool _step3_KeypadPowerOn;
         private bool _step4_CodeEntered;
-        private bool _step5_GatesOpened;
+        private bool _step5_LigthsPowerOn;
+        private bool _step6_GatesOpened;
 
         private bool _hasInteractedYet = false;
         private float _skipTimer = 0f;
@@ -40,6 +42,7 @@ namespace Route24.GameOff
             _eventHub.Subscribe<ScopeCalibrationCompleteEvent>(OnScopeComplete);
             _eventHub.Subscribe<KeypadPoweredOnEvent>(OnKeypadPowerOn);
             _eventHub.Subscribe<KeypadTestEnteredEvent>(OnCodeEntered);
+            _eventHub.Subscribe<LightsPoweredOnEvent>(OnLightsPowerOnEntered);
             _eventHub.Subscribe<DockGatesOpenedEvent>(OnGatesOpened);
             
             _eventHub.Subscribe<TutorialStartedEvent>(evt => ShowSkipUI());
@@ -106,11 +109,18 @@ namespace Route24.GameOff
             _step4_CodeEntered = true;
             _tutorialUI.SetStepCompleted(4);
         }
+        
+        private void OnLightsPowerOnEntered(LightsPoweredOnEvent evt)
+        {
+            if (!_step4_CodeEntered) return;
+            _step5_LigthsPowerOn = true;
+            _tutorialUI.SetStepCompleted(5);
+        }
 
         private void OnGatesOpened(DockGatesOpenedEvent evt)
         {
-            if (!_step4_CodeEntered) return;
-            _step5_GatesOpened = true;
+            if (!_step5_LigthsPowerOn) return;
+            _step6_GatesOpened = true;
             CompleteTutorialNow();
         }
 
