@@ -45,6 +45,11 @@ namespace Route24.Core
     /// Fired when the oscilloscope tutorial calibration test completes.
     /// </summary>
     public struct ScopeCalibrationCompleteEvent { }
+    
+    /// <summary>
+    /// Fired when the player turns on the keypad.
+    /// </summary>
+    public struct KeypadPoweredOnEvent { }
 
     /// <summary>
     /// Fired when any 4-digit test code is entered during the tutorial.

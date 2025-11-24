@@ -11,5 +11,6 @@ namespace Route24.GameOff
         public bool IsValid; // Whether this ship should be approved or not 
         public int ShipInspectionTime = 30; // if -1, no time limit
         public GameObject ShipPrefab;
+        public string EntryCode = "0000";
     }   
 }

@@ -18,6 +18,7 @@ namespace Route24.GameOff
         [SerializeField] private TextMeshProUGUI _step3Text;
         [SerializeField] private TextMeshProUGUI _step4Text;
         [SerializeField] private TextMeshProUGUI _step5Text;
+        [SerializeField] private TextMeshProUGUI _step6Text;
 
         private bool _visible = false;
 
@@ -35,11 +36,7 @@ namespace Route24.GameOff
             
             _skipFillBar.fillAmount = 0;
         }
-
-        /// <summary>
-        /// Amount should be passed as a 0-1
-        /// </summary>
-        /// <param name="amount"></param>
+        
         public void UpdateSkipFill(float amount)
         {
             if (!_visible) return;
@@ -79,6 +76,7 @@ namespace Route24.GameOff
             _step3Text.alpha = 0f;
             _step4Text.alpha = 0f;
             _step5Text.alpha = 0f;
+            _step6Text.alpha = 0f;
         }
 
         public void SetStepCompleted(int stepIndex)
@@ -103,6 +101,10 @@ namespace Route24.GameOff
                     break;
                 case 5:
                     Strike(_step5Text);
+                    FadeIn(_step6Text);
+                    break;
+                case 6:
+                    Strike(_step6Text);
                     break;
             }
         }
@@ -114,6 +116,7 @@ namespace Route24.GameOff
             ResetStyle(_step3Text);
             ResetStyle(_step4Text);
             ResetStyle(_step5Text);
+            ResetStyle(_step6Text);
         }
 
         private void ResetStyle(TextMeshProUGUI txt)

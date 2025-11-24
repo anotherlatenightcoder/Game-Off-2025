@@ -8,9 +8,12 @@ namespace Route24.GameOff
     {
         [SerializeField] private TutorialUIController _tutorialUI;
         [SerializeField] private float _skipTimerLength = 2f;
+        [SerializeField] private KeypadController _keypad;
         
         public bool TutorialStep1Completed => _step1_PowerOn;
         public bool TutorialStep2Completed => _step2_ScopeCalibrated;
+        public bool TutorialStep3Completed => _step3_KeypadPowerOn;
+        public bool TutorialStep4Completed => _step4_CodeEntered;
         public bool TutorialInProgress => _gameManager.CurrentGameplayState == GameplayState.Tutorial;
         public static TutorialController Instance;
         
@@ -19,8 +22,9 @@ namespace Route24.GameOff
 
         private bool _step1_PowerOn;
         private bool _step2_ScopeCalibrated;
-        private bool _step3_CodeEntered;
-        private bool _step4_GatesOpened;
+        private bool _step3_KeypadPowerOn;
+        private bool _step4_CodeEntered;
+        private bool _step5_GatesOpened;
 
         private bool _hasInteractedYet = false;
         private float _skipTimer = 0f;
@@ -34,6 +38,7 @@ namespace Route24.GameOff
             
             _eventHub.Subscribe<ConsolePoweredOnEvent>(OnPowerOn);
             _eventHub.Subscribe<ScopeCalibrationCompleteEvent>(OnScopeComplete);
+            _eventHub.Subscribe<KeypadPoweredOnEvent>(OnKeypadPowerOn);
             _eventHub.Subscribe<KeypadTestEnteredEvent>(OnCodeEntered);
             _eventHub.Subscribe<DockGatesOpenedEvent>(OnGatesOpened);
             
@@ -75,7 +80,6 @@ namespace Route24.GameOff
             _tutorialUI.SetStepCompleted(1);
             HideSkipUI();
             
-            // Send event to start boot sequence
             var scope = ServiceLocator.Get<OscilloscopeController>();
             if (scope != null)
                 scope.StartBootSequence();
@@ -88,17 +92,25 @@ namespace Route24.GameOff
             _tutorialUI.SetStepCompleted(2);
         }
         
+        private void OnKeypadPowerOn(KeypadPoweredOnEvent evt)
+        {
+            if (!_step2_ScopeCalibrated) return;
+            _step3_KeypadPowerOn = true;
+            _keypad.SetPowered(true);
+            _tutorialUI.SetStepCompleted(3);
+        }
+        
         private void OnCodeEntered(KeypadTestEnteredEvent evt)
         {
-            if (_step2_ScopeCalibrated) return;
-            _step3_CodeEntered = true;
-            _tutorialUI.SetStepCompleted(3);
+            if (!_step3_KeypadPowerOn) return;
+            _step4_CodeEntered = true;
+            _tutorialUI.SetStepCompleted(4);
         }
 
         private void OnGatesOpened(DockGatesOpenedEvent evt)
         {
-            if (!_step3_CodeEntered) return;
-            _step4_GatesOpened = true;
+            if (!_step4_CodeEntered) return;
+            _step5_GatesOpened = true;
             CompleteTutorialNow();
         }
 
