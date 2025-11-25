@@ -87,13 +87,13 @@ namespace Route24.GameOff
         {
             return _isActive &&
                    _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered;
+                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered && _waveConfirmed && _keycodeConfirmed;
         }
 
         public bool CanShowMessage()
         {
             return _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered;
+                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered && _waveConfirmed && _keycodeConfirmed;
         }
 
         public void OnInteract()
@@ -117,6 +117,8 @@ namespace Route24.GameOff
         private void Deactivate()
         {
             _isActive = false;
+            _waveConfirmed = false;
+            _keycodeConfirmed = false;
             SetVisualState(false);
         }
         
