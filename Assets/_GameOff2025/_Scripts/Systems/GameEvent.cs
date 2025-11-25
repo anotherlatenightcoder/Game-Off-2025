@@ -55,11 +55,19 @@ namespace Route24.Core
     /// Fired when any 4-digit test code is entered during the tutorial.
     /// </summary>
     public struct KeypadTestEnteredEvent { }
-    
+
     /// <summary>
     /// Fired when we trigger the light switch.
     /// </summary>
-    public struct LightsPoweredOnEvent { }
+    public struct LightsPoweredOnEvent
+    {
+        public bool Instant;
+
+        public LightsPoweredOnEvent(bool instant)
+        {
+            Instant = instant;   
+        }
+    }
 
     /// <summary>
     /// Fired when the player pulls the lever to open the docking gates and start Day 1.

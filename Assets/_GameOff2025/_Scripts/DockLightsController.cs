@@ -53,7 +53,23 @@ namespace Route24.GameOff
         private void OnLightsPoweredOn(LightsPoweredOnEvent evt)
         {
             StopAllCoroutines();
-            StartCoroutine(FadeInSequence());
+
+            if (evt.Instant)
+            {
+                // Lock lights to final intensity
+                for (int i = 0; i < _lights.Count; i++)
+                {
+                    if (_lights[i])
+                        _lights[i].intensity = _originalIntensities[i];
+                }
+
+                // Start long-term faulty flicker loop
+                StartCoroutine(LongTermFlickerLoop());
+            }
+            else
+            {
+                StartCoroutine(FadeInSequence());
+            }
         }
 
 

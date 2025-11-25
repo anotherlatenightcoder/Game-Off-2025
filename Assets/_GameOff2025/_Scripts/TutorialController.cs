@@ -15,7 +15,6 @@ namespace Route24.GameOff
         public bool TutorialStep3Completed => _step3_KeypadPowerOn;
         public bool TutorialStep4Completed => _step4_CodeEntered;
         public bool TutorialStep5Completed => _step4_CodeEntered;
-        public bool TutorialInProgress => _gameManager.CurrentGameplayState == GameplayState.Tutorial;
         public static TutorialController Instance;
         
         private GameManager _gameManager;
@@ -26,7 +25,6 @@ namespace Route24.GameOff
         private bool _step3_KeypadPowerOn;
         private bool _step4_CodeEntered;
         private bool _step5_LigthsPowerOn;
-        private bool _step6_GatesOpened;
 
         private bool _hasInteractedYet = false;
         private float _skipTimer = 0f;
@@ -120,7 +118,6 @@ namespace Route24.GameOff
         private void OnGatesOpened(DockGatesOpenedEvent evt)
         {
             if (!_step5_LigthsPowerOn) return;
-            _step6_GatesOpened = true;
             CompleteTutorialNow();
         }
 
@@ -138,11 +135,6 @@ namespace Route24.GameOff
         private void HideSkipUI()
         {
             _tutorialUI.HideSkipPrompt();
-        }
-
-        private void ShowNextStep()
-        {
-            _tutorialUI.SetStepCompleted(1);
         }
     }   
 }

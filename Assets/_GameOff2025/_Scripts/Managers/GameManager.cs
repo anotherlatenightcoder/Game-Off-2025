@@ -164,7 +164,7 @@ namespace Route24.GameOff
             _tutorialCompleted = true;
             
             _eventHub?.Publish(new TutorialCompletedEvent());
-            _eventHub?.Publish(new LightsPoweredOnEvent());
+            _eventHub?.Publish(new LightsPoweredOnEvent(true));
             
             StartCoroutine(DelayedStartOfDay());
         }
