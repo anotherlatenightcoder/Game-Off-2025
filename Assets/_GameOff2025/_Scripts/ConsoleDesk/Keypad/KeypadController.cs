@@ -32,7 +32,14 @@ namespace Route24.GameOff
             // Listen for incoming ship-code assignment
             _eventHub.Subscribe<InspectionStartedEvent>(evt =>
             {
+                Debug.Log($"Require code {evt.Ship.EntryCode} for Ship {evt.Ship.ShipName}");
                 _requiredCode = evt.Ship.EntryCode;
+                ResetCode();
+            });
+            
+            _eventHub.Subscribe<TutorialCompletedEvent>(evt =>
+            {
+                SetPowered(true);
                 ResetCode();
             });
         }
@@ -59,7 +66,6 @@ namespace Route24.GameOff
             }
             
             _enteredCode += digit.ToString();
-            _lights.FlashGreen();
 
             if (_enteredCode.Length >= _codeLength)
                 ValidateCode();
@@ -70,8 +76,11 @@ namespace Route24.GameOff
             if (_enteredCode == _requiredCode)
             {
                 Debug.Log("[KEYPAD] Correct code entered!");
+                
+                // We need to send a new event here so that
+                // the approve/decline buttons can open (but only once code matches)
 
-                _eventHub.Publish(new KeypadTestEnteredEvent());
+                _eventHub.Publish(new InspectionKeypadCodeMatchedEvent());
                 _lights.FlashGreenStrong();
             }
             else
@@ -86,7 +95,6 @@ namespace Route24.GameOff
         private void HandleTutorialDigit(int digit)
         {
             _enteredCode += digit.ToString();
-            _lights.FlashGreen();
 
             if (_enteredCode.Length < _codeLength)
                 return;

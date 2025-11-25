@@ -16,6 +16,8 @@ namespace Route24.GameOff
         [Header("Intensity Settings")]
         [SerializeField] private float _onIntensity = 3f;
         [SerializeField] private float _flashIntensity = 5f;
+        [SerializeField] private float _flickerSpeed = 0.5f;
+        [SerializeField] private float _flashDuration = 3f;
 
         private Material _readyMat;
         private Material _errorMat;
@@ -23,6 +25,7 @@ namespace Route24.GameOff
         private const string EMISSION_PROP = "_EmissionColor";
 
         private Coroutine _autoOffRoutine;
+        private Coroutine _flickerRoutine;
 
         private void Awake()
         {
@@ -73,18 +76,54 @@ namespace Route24.GameOff
         private void FlashLight(Material mat, Color baseColor, bool strong = false)
         {
             float intensity = strong ? _flashIntensity * 1.5f : _flashIntensity;
-            
-            SetEmission(mat, baseColor * intensity);
-            
+
+            // If already flickering, stop and restart
+            if (_flickerRoutine != null)
+                StopCoroutine(_flickerRoutine);
+
+            _flickerRoutine = StartCoroutine(FlickerRoutine(mat, baseColor, intensity));
+
+            // Auto off after duration
             if (_autoOffRoutine != null)
                 StopCoroutine(_autoOffRoutine);
 
-            _autoOffRoutine = StartCoroutine(AutoOffRoutine(2f));
+            _autoOffRoutine = StartCoroutine(AutoOffRoutine(_flashDuration));
+        }
+
+        private IEnumerator FlickerRoutine(Material mat, Color baseColor, float flashIntensity)
+        {
+            float normalIntensity = _onIntensity;
+            float timer = 0f;
+
+            while (timer < _flashDuration)
+            {
+                // TURN BRIGHT
+                SetEmission(mat, baseColor * flashIntensity);
+                yield return new WaitForSeconds(_flickerSpeed);
+
+                // TURN NORMAL (or off if normalIntensity is 0)
+                SetEmission(mat, baseColor * normalIntensity);
+                yield return new WaitForSeconds(_flickerSpeed);
+
+                timer += _flickerSpeed * 2f;
+            }
+
+            // End with normal
+            SetEmission(mat, baseColor * normalIntensity);
+
+            _flickerRoutine = null;
         }
 
         private IEnumerator AutoOffRoutine(float delay)
         {
             yield return new WaitForSeconds(delay);
+
+            if (_flickerRoutine != null)
+            {
+                StopCoroutine(_flickerRoutine);
+                _flickerRoutine = null;
+            }
+
             SetOff();
         }
 

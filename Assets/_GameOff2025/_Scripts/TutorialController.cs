@@ -63,7 +63,7 @@ namespace Route24.GameOff
                     if (_skipTimer >= _skipTimerLength)
                     {
                         HideSkipUI();
-                        CompleteTutorialNow();
+                        CompleteTutorialNow(true);
                     }
                 }
                 else
@@ -118,11 +118,17 @@ namespace Route24.GameOff
         private void OnGatesOpened(DockGatesOpenedEvent evt)
         {
             if (!_step5_LigthsPowerOn) return;
-            CompleteTutorialNow();
+            _tutorialUI.SetStepCompleted(6);
+            CompleteTutorialNow(false);
         }
 
-        private void CompleteTutorialNow()
+        private void CompleteTutorialNow(bool instant)
         {
+            // I've added the instant flag because when we skip the tutorial,
+            // we want to instantly turn everything on. Currently there is a bug if
+            // do the last task in the tutorial, during the switch flip animation it 
+            // suddenly snaps because of this...
+            _tutorialUI.HideChecklist();
             _gameManager.CompleteTutorial();
         }
 

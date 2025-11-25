@@ -102,6 +102,11 @@ namespace Route24.Core
             Ship = ship;
         }
     }
+    
+    /// <summary>
+    /// Fired once the user entered 4 digits that match.
+    /// </summary>
+    public struct InspectionKeypadCodeMatchedEvent { }
 
     public struct InspectionCompletedEvent
     {
