@@ -4722,10 +4722,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioTestManager
   backgroundMusic: {fileID: 8300000, guid: 8f5a8f4fb3875384982faedf9d84764d, type: 3}
-  musicVolume: 0.2
+  musicVolume: 0
   soundEffects:
   - key: SHIP_SPAWN
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 125b42dfae293bc48b46ed568d57c8d2, type: 3}
   - key: SHIP_ARRIVED
     clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
   - key: SHIP_APPROVED
