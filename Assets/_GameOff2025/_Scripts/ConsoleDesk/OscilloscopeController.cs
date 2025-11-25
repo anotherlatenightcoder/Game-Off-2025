@@ -68,6 +68,7 @@ namespace Route24.GameOff
         private void OnInspectionStarted(InspectionStartedEvent obj)
         {
             _isWaveMatched = false;
+            _waveformRenderer.ResetMatchStateForNewSession();
             _waveformRenderer.StartNewSignalGame();
         }
 
@@ -137,20 +138,20 @@ namespace Route24.GameOff
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
                 _waveformRenderer.SetMatchUIVisible(true);
                 
-                if (!IsTutorialMode())
-                {
-                    _waveformRenderer.ResetMatchStateForNewSession();
-                }
+                // if (!IsTutorialMode())
+                // {
+                //     _waveformRenderer.ResetMatchStateForNewSession();
+                // }
                 
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
             else
             {
-                _waveformRenderer.StopSignals();
+                // When we zoom out
+                // _waveformRenderer.StopSignals();
                 _focusCooldownActive = true;
-                
-                _waveformRenderer.SetMatchUIVisible(false);
+                // _waveformRenderer.SetMatchUIVisible(false);
 
                 _cameraController.ReturnToDefault();
                 Cursor.lockState = CursorLockMode.Locked;

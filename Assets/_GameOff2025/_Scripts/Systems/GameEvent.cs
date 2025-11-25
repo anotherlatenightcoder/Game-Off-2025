@@ -130,12 +130,14 @@ namespace Route24.Core
     public struct InspectionCompletedEvent
     {
         public bool Approved;
+        public bool Valid;
         public bool TimedOut;
         public ShipProfile Ship;
 
-        public InspectionCompletedEvent(bool approved, bool timedOut, ShipProfile ship)
+        public InspectionCompletedEvent(bool approved, bool valid, bool timedOut, ShipProfile ship)
         {
             Approved = approved;
+            Valid = valid;
             TimedOut = timedOut;
             Ship = ship;
         }

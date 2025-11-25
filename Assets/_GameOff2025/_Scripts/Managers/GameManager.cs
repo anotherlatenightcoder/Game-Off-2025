@@ -114,7 +114,7 @@ namespace Route24.GameOff
             
             _shipManager.HandleInspectionComplete(timedOut, approved); 
             
-            _eventHub?.Publish(new InspectionCompletedEvent(approved, timedOut, ship));
+            _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship));
         }
 
         private IEnumerator WaitThenNextShip()

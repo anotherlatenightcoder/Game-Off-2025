@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Route24.Core;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -95,6 +96,11 @@ namespace Route24.GameOff
                 _currentShipController.Initialize(_shipSpawn, _shipDock, _shipExit, _shipSink);
                 _currentShipController.MoveToDock();
                 Debug.Log($"Ship incoming: {_currentShipProfile.ShipName}");
+
+                var shipCargo = _currentShipProfile.CargoList;
+                var bannedCargo = _cargoManifestManager.BannedCargo;
+                
+                _shipProfiles[currentShipIndex].IsValid = !shipCargo.Any(item => bannedCargo.Contains(item));
             }
             else 
                 Debug.Log("[ShipManager] failed to spawn ship.");
