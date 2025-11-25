@@ -69,13 +69,13 @@ namespace Route24.GameOff
         {
             return _isActive &&
                    _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered;
         }
 
         public bool CanShowMessage()
         {
             return _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && KeypadController.CodeEntered;
         }
 
         public void OnInteract()

@@ -40,6 +40,8 @@ namespace Route24.GameOff
                 CurrencyAmount += transaction.Amount;
             else
                 CurrencyAmount -= transaction.Amount;
+            
+            _eventHub?.Publish(new TransactionAddedEvent(transaction));
         }
 
         public void AddCurrency(int amount, string reason)
@@ -55,6 +57,8 @@ namespace Route24.GameOff
             CurrencyAmount += amount;
             _transactionsList.Add(transaction);
             Debug.Log($"[CurrencyManager] Added {transaction.Amount} to currency, new currency: {CurrencyAmount}");
+            
+            _eventHub?.Publish(new TransactionAddedEvent(transaction));
         }
 
         public void RemoveCurrency(int amount, string reason)
@@ -70,6 +74,8 @@ namespace Route24.GameOff
             CurrencyAmount -= transaction.Amount;
             _transactionsList.Add(transaction);
             Debug.Log($"[CurrencyManager] Removed {transaction.Amount} from currency, new currency: {CurrencyAmount}");
+            
+            _eventHub?.Publish(new TransactionAddedEvent(transaction));
         }
         
         public bool TryRemoveCurrency(int amount, string reason)

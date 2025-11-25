@@ -6,7 +6,7 @@ namespace Route24.GameOff
         public const int WrongApprovedPenalty = 15;
         
         public const int DelayBeforeDayStart = 5;
-        public const int DayTime = 120;
+        public const int DayTime = 300;
         public const int DelayBetweenDays = 8;
     }
 }

@@ -11,6 +11,8 @@ namespace Route24.GameOff
 
         [Header("Settings")]
         [SerializeField] private int _codeLength = 4;
+        
+        public static bool CodeEntered = false;
 
         private string _requiredCode = "";
         private string _enteredCode = "";
@@ -34,6 +36,7 @@ namespace Route24.GameOff
             {
                 Debug.Log($"Require code {evt.Ship.EntryCode} for Ship {evt.Ship.ShipName}");
                 _requiredCode = evt.Ship.EntryCode;
+                CodeEntered = false;
                 ResetCode();
             });
             
@@ -76,10 +79,8 @@ namespace Route24.GameOff
             if (_enteredCode == _requiredCode)
             {
                 Debug.Log("[KEYPAD] Correct code entered!");
-                
-                // We need to send a new event here so that
-                // the approve/decline buttons can open (but only once code matches)
 
+                CodeEntered = true;
                 _eventHub.Publish(new InspectionKeypadCodeMatchedEvent());
                 _lights.FlashGreenStrong();
             }

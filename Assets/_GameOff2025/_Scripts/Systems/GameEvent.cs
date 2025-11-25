@@ -104,6 +104,19 @@ namespace Route24.Core
     }
     
     /// <summary>
+    /// Fired whenever we receive or deduct money
+    /// </summary>
+    public struct TransactionAddedEvent
+    {
+        public Transaction Transaction;
+
+        public TransactionAddedEvent(Transaction t)
+        {
+            Transaction = t;
+        }
+    }
+    
+    /// <summary>
     /// Fired once the user entered 4 digits that match.
     /// </summary>
     public struct InspectionKeypadCodeMatchedEvent { }
