@@ -4727,23 +4727,23 @@ MonoBehaviour:
   - key: SHIP_SPAWN
     clip: {fileID: 8300000, guid: 125b42dfae293bc48b46ed568d57c8d2, type: 3}
   - key: SHIP_ARRIVED
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 29c6097941dcd6a42b2fd387d7f89b70, type: 3}
   - key: SHIP_APPROVED
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 59bbbe17b34a43646ad8296fce52137a, type: 3}
   - key: SHIP_DECLINED
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 6043895ae467ff948a608570ee0050cd, type: 3}
   - key: SHIP_SINK
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 887a2419449a4dc4d8a606ccd4a79639, type: 3}
   - key: SHIP_EXIT
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 1d8125fa85a9b0746b69b239ad671dc7, type: 3}
   - key: GENERIC_BUTTON
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: e23edd7678c59f94bb4ac5344773279c, type: 3}
   - key: APPROVE_BUTTON
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: a0d27cbef7fcaf84cae61cdf6cda363b, type: 3}
   - key: DECLINE_BUTTON
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: a8075aabd7e716b4a81cf27036114aaa, type: 3}
   - key: SLIDER_TOGGLE
-    clip: {fileID: 8300000, guid: 6751b6e54751bee40aca9b54f422d565, type: 3}
+    clip: {fileID: 8300000, guid: 81c2938021eba8c44afc0daa8b3a1f76, type: 3}
 --- !u!1 &1556288255
 GameObject:
   m_ObjectHideFlags: 0
