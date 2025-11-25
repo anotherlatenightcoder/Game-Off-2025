@@ -76,7 +76,6 @@ namespace Route24.GameOff
         [SerializeField, Range(0.2f, 2f)] private float _drainSpeed = 0.5f;
         [SerializeField] private TextMeshProUGUI _matchPercentText;
         [SerializeField] private TextMeshProUGUI _timerText;
-        [SerializeField] private Transform _signalLockedIndicator;
         
         // ─────────────────────────────────────────────
         // UI Stuff
@@ -154,6 +153,7 @@ namespace Route24.GameOff
 
             _targetAmplitude = _shipAmplitude;
             _currentAmplitude = _shipAmplitude;
+            _playerTimeOffset = _shipTimeOffset;
 
             if (_shipHasVariation)
                 ScheduleNextState();
@@ -161,6 +161,10 @@ namespace Route24.GameOff
             StartCoroutine(AdjustSignalStrengthRoutine());
             UpdateUIText();
             _signalsStopped = false;
+            
+            // Show all the related elements
+            _waveInfoPanel.alpha = 1f;
+            _waveCanvas.alpha = 1f;
         }
 
         public void StopSignals()
@@ -490,8 +494,7 @@ namespace Route24.GameOff
                 _currentState = SignalState.Flatline;
                 _canMatch = false;
 
-                if (_signalLockedIndicator)
-                    _signalLockedIndicator.gameObject.SetActive(false);
+                _completePanel.alpha = 0f;
 
                 StartCoroutine(EndStateAfterDelay(_flatlineDuration, true));
             }
@@ -525,18 +528,18 @@ namespace Route24.GameOff
                 _holdTimer += Time.deltaTime;
                 if (_holdTimer >= _holdDuration && !_isLocked)
                 {
+                    ParentController.WaveMatched();
                     _isLocked = true;
                     Debug.Log("[WaveMatch] Signal Locked!");
 
                     StopSignals();
-                    if (_signalLockedIndicator)
-                        _signalLockedIndicator.gameObject.SetActive(true);
+                    _completePanel.alpha = 1f;
                 }
             }
             else
             {
-                if (_isLocked && _signalLockedIndicator)
-                    _signalLockedIndicator.gameObject.SetActive(false);
+                if (_isLocked)
+                    _completePanel.alpha = 0f;
 
                 _isLocked = false;
                 _holdTimer = Mathf.Max(0f, _holdTimer - Time.deltaTime * _drainSpeed);

@@ -82,6 +82,12 @@ namespace Route24.Core
     // ───────────────────────────────
     // Game-related events
     // ───────────────────────────────
+    
+    /// <summary>
+    /// Fired after the player has aligned their signal with the ship for the hold duration
+    /// </summary>
+    public struct WaveMatchedEvent { }
+    
     public struct ShipArrivedForInspectionEvent
     {
         public int ShipIndex;

@@ -30,12 +30,15 @@ namespace Route24.GameOff
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
 
         public bool IsFocused => _inFocus;
-        public bool IsTutorialBooting => _isBooting;
+        public bool IsTutorialBooting() => _isBooting;
+        public bool IsWaveMatched => _isWaveMatched;
         
         private GameManager _gameManager;
+        private EventHub _eventHub;
         private bool _inFocus;
         private bool _focusCooldownActive;
         private bool _isBooting;
+        private bool _isWaveMatched = false;
 
         /// <summary>
         /// Called by the SceneObjectInitializer after core systems are ready.
@@ -44,6 +47,7 @@ namespace Route24.GameOff
         public void SceneInitialize()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
+            _eventHub = ServiceLocator.Get<EventHub>();
 
             if (!_waveformRenderer)
             {
@@ -56,9 +60,17 @@ namespace Route24.GameOff
             InitializeKnobs();
             SetInitialWaveSettings();
             
+            _eventHub?.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            
             ServiceLocator.Register(typeof(OscilloscopeController), this);
         }
-        
+
+        private void OnInspectionStarted(InspectionStartedEvent obj)
+        {
+            _isWaveMatched = false;
+            _waveformRenderer.StartNewSignalGame();
+        }
+
         public void ExitFromTutorialSuccess()
         {
             StartCoroutine(DelayedExitRoutine());
@@ -238,5 +250,11 @@ namespace Route24.GameOff
         }
         
         public void OnInteract() => SetFocus(!_inFocus);
+
+        public void WaveMatched()
+        {
+            _isWaveMatched = true;
+            _eventHub?.Publish(new WaveMatchedEvent());
+        }
     }
 }

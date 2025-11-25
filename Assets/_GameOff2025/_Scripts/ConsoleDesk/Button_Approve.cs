@@ -30,6 +30,8 @@ namespace Route24.GameOff
         private Quaternion _closedRot;
         private Quaternion _openRot;
         private Material _emissionMaterialInstance;
+        private bool _keycodeConfirmed = false;
+        private bool _waveConfirmed = false;
 
         public void SceneInitialize()
         {
@@ -39,7 +41,22 @@ namespace Route24.GameOff
             if (_emissionRenderer)
                 _emissionMaterialInstance = _emissionRenderer.material;
             
-            _eventHub.Subscribe<InspectionKeypadCodeMatchedEvent>(e => Activate());
+            _eventHub.Subscribe<InspectionKeypadCodeMatchedEvent>(evt =>
+            {
+                _keycodeConfirmed = true;
+                
+                if (_keycodeConfirmed && _waveConfirmed)
+                    Activate();
+            });
+            
+            _eventHub.Subscribe<WaveMatchedEvent>(evt =>
+            {
+                _waveConfirmed = true;
+                
+                if (_keycodeConfirmed && _waveConfirmed)
+                    Activate();
+            });
+            
             _eventHub.Subscribe<InspectionCompletedEvent>(e => Deactivate());
             _eventHub.Subscribe<ShipArrivedForInspectionEvent>(e => Deactivate());
             _eventHub.Subscribe<DayEndedEvent>(e => Deactivate());
