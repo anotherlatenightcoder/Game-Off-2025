@@ -30,7 +30,7 @@ namespace Route24.GameOff
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
 
         public bool IsFocused => _inFocus;
-        public bool IsTutorialBooting() => _isBooting;
+        public bool IsTutorialBooting => _isBooting;
         public bool IsWaveMatched => _isWaveMatched;
         
         private GameManager _gameManager;
