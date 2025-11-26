@@ -560,6 +560,7 @@ namespace Route24.GameOff
             _currentMatchPercent = 0f;
             _holdTimer = 0f;
             _isLocked = false;
+            _completePanel.alpha = 0f;
 
             UpdateUIText();
         }
