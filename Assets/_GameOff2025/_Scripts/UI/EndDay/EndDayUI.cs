@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Route24.Core;
 using TMPro;
 using UnityEngine;
@@ -26,12 +28,14 @@ namespace Route24.GameOff
         private GameManager _gameManager;
         private CurrencyManager _currencyManager;
         private EventHub _eventHub;
+        private ShipManager _shipManager;
         
         public void Initialize()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
             _currencyManager = ServiceLocator.Get<CurrencyManager>();
             _eventHub = ServiceLocator.Get<EventHub>();
+            _shipManager = ServiceLocator.Get<ShipManager>();
             
             _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
             _nextDayButton.onClick.AddListener(OnNextDayButtonClicked);
@@ -44,6 +48,14 @@ namespace Route24.GameOff
 
         private void OnDayEnded(DayEndedEvent dayEndedEvent)
         {
+            StartCoroutine(DayEndeCoroutine(dayEndedEvent));
+        }
+
+        private IEnumerator DayEndeCoroutine(DayEndedEvent dayEndedEvent)
+        {
+            while (_shipManager.HasActiveShip) // wait for ship to exit
+                yield return null;
+            
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.Confined;
             
