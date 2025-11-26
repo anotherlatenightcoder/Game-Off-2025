@@ -12,6 +12,8 @@ namespace Route24.GameOff
         [Header("Settings")]
         [SerializeField] private int _codeLength = 4;
         
+        [SerializeField] private KeypadUI _keypadUI;
+        
         public static bool CodeEntered = false;
 
         private string _requiredCode = "";
@@ -69,6 +71,8 @@ namespace Route24.GameOff
             }
             
             _enteredCode += digit.ToString();
+            
+            _keypadUI.DigitPressed(_enteredCode);
 
             if (_enteredCode.Length >= _codeLength)
                 ValidateCode();
@@ -88,6 +92,7 @@ namespace Route24.GameOff
             {
                 Debug.Log("[KEYPAD] WRONG CODE");
                 _lights.FlashRed();
+                _keypadUI.ResetDisplay();
             }
 
             ResetCode();
@@ -96,6 +101,10 @@ namespace Route24.GameOff
         private void HandleTutorialDigit(int digit)
         {
             _enteredCode += digit.ToString();
+            
+            // So we can see it in the tutorial as well
+            // don't shame my bad coding practice
+            _keypadUI.DigitPressed(_enteredCode);
 
             if (_enteredCode.Length < _codeLength)
                 return;

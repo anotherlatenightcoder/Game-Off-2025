@@ -190,7 +190,7 @@ namespace Route24.GameOff
 
         private IEnumerator BootSequence()
         {
-            float bootDuration = 5f;
+            float bootDuration = 3f;
             float elapsed = 0f;
 
             while (elapsed < bootDuration)
