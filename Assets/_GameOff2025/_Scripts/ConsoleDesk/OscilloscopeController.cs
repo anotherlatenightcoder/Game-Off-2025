@@ -1,6 +1,7 @@
 using System.Collections;
 using Route24.Core;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Route24.GameOff
 {
@@ -16,10 +17,7 @@ namespace Route24.GameOff
         [SerializeField] private Transform _cameraFocusPoint;
         [SerializeField] private Transform _cameraLookTarget;
         [SerializeField, Range(20f, 60f)] private float _focusFOV = 35f;
-
-        [Header("Oscilloscope UI")]
-        [SerializeField] private GameObject _oscilloscopeUI;
-
+        
         [Header("Waveform Renderer")]
         [SerializeField] private UIWaveformDualRenderer _waveformRenderer;
 
@@ -32,10 +30,15 @@ namespace Route24.GameOff
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
 
         public bool IsFocused => _inFocus;
-
+        public bool IsTutorialBooting => _isBooting;
+        public bool IsWaveMatched => _isWaveMatched;
+        
         private GameManager _gameManager;
+        private EventHub _eventHub;
         private bool _inFocus;
         private bool _focusCooldownActive;
+        private bool _isBooting;
+        private bool _isWaveMatched = false;
 
         /// <summary>
         /// Called by the SceneObjectInitializer after core systems are ready.
@@ -44,19 +47,44 @@ namespace Route24.GameOff
         public void SceneInitialize()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
+            _eventHub = ServiceLocator.Get<EventHub>();
 
             if (!_waveformRenderer)
             {
                 Debug.LogError("[OscilloscopeController] Missing waveform renderer reference.");
                 return;
             }
-
-            if (_oscilloscopeUI)
-                _oscilloscopeUI.SetActive(false);
+            
+            _waveformRenderer.ParentController = this;
 
             InitializeKnobs();
             SetInitialWaveSettings();
+            
+            _eventHub?.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            
+            ServiceLocator.Register(typeof(OscilloscopeController), this);
         }
+
+        private void OnInspectionStarted(InspectionStartedEvent obj)
+        {
+            _isWaveMatched = false;
+            _waveformRenderer.ResetMatchStateForNewSession();
+            _waveformRenderer.StartNewSignalGame();
+        }
+
+        public void ExitFromTutorialSuccess()
+        {
+            StartCoroutine(DelayedExitRoutine());
+        }
+        
+        private IEnumerator DelayedExitRoutine()
+        {
+            yield return new WaitForSeconds(2f);
+            
+            if (_inFocus)
+                SetFocus(false);
+        }
+
         
         private void InitializeKnobs()
         {
@@ -84,6 +112,12 @@ namespace Route24.GameOff
             _waveformRenderer.SetPlayerOffset(_speedKnob.GetCurrentValue());
             _waveformRenderer.SetPlayerAmplitude(_amplitudeKnob.GetCurrentValue());
             _waveformRenderer.SetPlayerFrequency(_frequencyKnob.GetCurrentValue());
+            
+            // We should also set the knob rotation based on its starting value,
+            // otherwise when you click to drag it ends up jumping the wave
+            _speedKnob.SetKnobRotationFromValue(_speedKnob.GetCurrentValue());
+            _amplitudeKnob.SetKnobRotationFromValue(_amplitudeKnob.GetCurrentValue());
+            _frequencyKnob.SetKnobRotationFromValue(_frequencyKnob.GetCurrentValue());
         }
         
         private void Update()
@@ -102,14 +136,22 @@ namespace Route24.GameOff
             if (state)
             {
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
-                _waveformRenderer.StartNewSignalGame();
+                _waveformRenderer.SetMatchUIVisible(true);
+                
+                // if (!IsTutorialMode())
+                // {
+                //     _waveformRenderer.ResetMatchStateForNewSession();
+                // }
+                
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
             else
             {
-                _waveformRenderer.StopSignals();
+                // When we zoom out
+                // _waveformRenderer.StopSignals();
                 _focusCooldownActive = true;
+                // _waveformRenderer.SetMatchUIVisible(false);
 
                 _cameraController.ReturnToDefault();
                 Cursor.lockState = CursorLockMode.Locked;
@@ -118,6 +160,51 @@ namespace Route24.GameOff
                 StartCoroutine(FocusCooldownRoutine());
             }
         }
+        
+        private bool IsTutorialMode()
+        {
+            return _gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                   TutorialController.Instance.TutorialStep1Completed &&
+                   !TutorialController.Instance.TutorialStep2Completed;
+        }
+
+        public void StartBootSequence()
+        {
+            _isBooting = true;
+            _waveformRenderer.StartBootSequence();
+        }
+
+        public void EndBootSequence()
+        {
+            if (_isBooting)
+            {
+                _isBooting = false;
+                SetupTutorialWave();
+            }
+
+            _waveformRenderer.SetMatchUIVisible(true);
+            _waveformRenderer.ResetMatchStateForNewSession();
+        }
+        
+        // This is to load up some dummy data for the tutorial to test
+        private void SetupTutorialWave()
+        {
+            // Disable all random ship variation
+            _waveformRenderer.StopSignals();
+
+            // Tutorial: Set a fixed “target” wave
+            // All axes match except amplitude
+            _waveformRenderer.SetTutorialModeWave(
+                shipAmplitude: 0.6f,
+                shipFrequency: 3f,
+                shipOffset: 0f,
+                playerAmplitude: 0f,
+                playerFrequency: 3f,
+                playerOffset: 0f,
+                holdtimer: 5f
+            );
+        }
+
 
         /// <summary>
         /// Enforces a short cooldown after exiting focus mode to prevent
@@ -134,18 +221,41 @@ namespace Route24.GameOff
         
         public bool CanInteract()
         {
-            // UNCOMMENT AFTER TESTING:
-            // return !_inFocus && !_focusCooldownActive && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
-            return !_inFocus && !_focusCooldownActive && _gameManager;
+            if (_inFocus || _focusCooldownActive || _gameManager == null)
+                return false;
+            
+            // Allow access during normal gameplay inspection
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+            
+            // Case for the tutorial, but only after step 1 has been completed
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                !TutorialController.Instance.TutorialStep2Completed)
+                return true;
+
+            return false;
         }
         
         public bool CanShowMessage()
         {
-            // UNCOMMENT AFTER TESTING:
-            // return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
-            return !_inFocus && _gameManager;
+            if (_inFocus) return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                if (TutorialController.Instance.TutorialStep1Completed &&
+                    !TutorialController.Instance.TutorialStep2Completed)
+                    return true;
+            }
+            
+            return _gameManager.CurrentGameplayState == GameplayState.Inspecting;
         }
         
         public void OnInteract() => SetFocus(!_inFocus);
+
+        public void WaveMatched()
+        {
+            _isWaveMatched = true;
+            _eventHub?.Publish(new WaveMatchedEvent());
+        }
     }
 }

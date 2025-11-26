@@ -27,7 +27,7 @@ namespace Route24.GameOff
         public void SceneInitialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
-            SetLeverState(false, instant: true);
+            // SetLeverState(false, instant: true);
         }
 
         // ─────────────────────────────────────────────

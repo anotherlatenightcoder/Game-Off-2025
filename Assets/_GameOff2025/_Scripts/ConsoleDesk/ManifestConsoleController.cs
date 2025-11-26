@@ -18,6 +18,9 @@ namespace Route24.GameOff
         [SerializeField] private Transform _shipListContainer;
         [SerializeField] private Transform _bannedListContainer;
         [SerializeField] private GameObject _cargoEntryPrefab;
+        [SerializeField] private TextMeshProUGUI _shipNameText;
+        [SerializeField] private TextMeshProUGUI _shipCodeText;
+        [SerializeField] private CanvasGroup _canvasGroup;
 
         [Header("Scan Settings")]
         [SerializeField] private float _scanRevealDelay = 1f;
@@ -53,8 +56,9 @@ namespace Route24.GameOff
             _manifestManager = ServiceLocator.Get<CargoManifestManager>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
-            _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            // _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
+            // _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            _eventHub.Subscribe<TutorialCompletedEvent>(OnStartup);
             _eventHub.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionEnded);
             _eventHub.Subscribe<BannedCargoGeneratedEvent>(OnBannedListGenerated);
@@ -71,8 +75,16 @@ namespace Route24.GameOff
 
             if (_highlightBackground)
                 _highlightBackground.color = _defaultColor;
+            
+            _canvasGroup.alpha = 0f;
         }
-        
+
+        private void OnStartup(TutorialCompletedEvent obj)
+        {
+            ClearShipList();
+            _canvasGroup.alpha = 1f;
+        }
+
         // ─────────────────────────────────────────────
         // Events
         // ─────────────────────────────────────────────
@@ -80,6 +92,8 @@ namespace Route24.GameOff
         private void OnInspectionStarted(InspectionStartedEvent evt)
         {
             _currentShip = evt.Ship;
+            PopulateShipList(_currentShip.CargoList);
+            PopulateShipDetails();
         }
         
         private void OnInspectionEnded(InspectionCompletedEvent evt)
@@ -165,12 +179,38 @@ namespace Route24.GameOff
             _currentIndex = 0;
             UpdateHighlight();
         }
+        
+        private void PopulateShipDetails()
+        {
+            string shipCode = _currentShip.EntryCode;
+            
+            // 50% chance to mask ONE character
+            // We should add this percentage to our ship configs? idk
+            if (Random.value < 0.5f)
+            {
+                if (!string.IsNullOrEmpty(shipCode))
+                {
+                    int index = Random.Range(0, shipCode.Length);
+
+                    char[] chars = shipCode.ToCharArray();
+                    chars[index] = '*';
+
+                    shipCode = new string(chars);
+                }
+            }
+            
+            _shipNameText.text = "SHIP: " + _currentShip.ShipName;
+            _shipCodeText.text = "CODE: " + shipCode;
+        }
 
         private void ClearShipList()
         {
             foreach (Transform child in _shipListContainer)
                 Destroy(child.gameObject);
             _shipEntries.Clear();
+            
+            _shipCodeText.text = "";
+            _shipNameText.text = "";
             
             UpdateHighlight();
         }

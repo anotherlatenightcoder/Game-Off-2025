@@ -1,4 +1,5 @@
 using System.Collections;
+using Route24.Core;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -8,6 +9,8 @@ namespace Route24.GameOff
     [RequireComponent(typeof(CanvasRenderer))]
     public class UIWaveformDualRenderer : Graphic
     {
+        public OscilloscopeController ParentController { get; set; }
+        
         // ─────────────────────────────────────────────
         // Shared Settings
         // ─────────────────────────────────────────────
@@ -73,7 +76,16 @@ namespace Route24.GameOff
         [SerializeField, Range(0.2f, 2f)] private float _drainSpeed = 0.5f;
         [SerializeField] private TextMeshProUGUI _matchPercentText;
         [SerializeField] private TextMeshProUGUI _timerText;
-        [SerializeField] private Transform _signalLockedIndicator;
+        
+        // ─────────────────────────────────────────────
+        // UI Stuff
+        // ─────────────────────────────────────────────
+        [Header("UI Stuff")]
+        [SerializeField] private CanvasGroup _bootPanel;
+        [SerializeField] private CanvasGroup _waveInfoPanel;
+        [SerializeField] private CanvasGroup _completePanel;
+        [SerializeField] private Image _bootLoaderFill;
+        [SerializeField] private CanvasGroup _waveCanvas;
 
         // ─────────────────────────────────────────────
         // Internal State
@@ -97,7 +109,11 @@ namespace Route24.GameOff
         private bool _isLocked;
         private bool _canMatch = true;
         private bool _signalsStopped = false;
-
+        private bool _isBooting = false;
+        
+        private bool _tutorialMode = false;
+        private float _tutorialShipAmp, _tutorialShipFreq, _tutorialShipOffset;
+        private float _tutorialPlayerAmp, _tutorialPlayerFreq, _tutorialPlayerOffset;
 
         // ─────────────────────────────────────────────
         // Initialization
@@ -109,14 +125,21 @@ namespace Route24.GameOff
             _visibilityMask = new bool[_resolution];
             RegenerateNoiseMask();
 
+            // Hide all UI elements
+            _bootPanel.alpha = 0f;
+            _waveInfoPanel.alpha = 0f;
+            _completePanel.alpha = 0f;
+            _waveCanvas.alpha = 0f;
         }
 
         // ─────────────────────────────────────────────
         // Public API
         // ─────────────────────────────────────────────
 
-        public void SetPlayerAmplitude(float value) =>
-            _playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);
+        public void SetPlayerAmplitude(float value)
+        {
+            _playerAmplitude = Mathf.Clamp(value, 0.05f, 1f);   
+        }
         
         public void SetPlayerFrequency(float value) =>
             _playerFrequency = Mathf.Clamp(value, 0.5f, 10f);
@@ -126,12 +149,11 @@ namespace Route24.GameOff
 
         public void StartNewSignalGame()
         {
-            gameObject.SetActive(true);
-
             SetRandomShipSettings();
 
             _targetAmplitude = _shipAmplitude;
             _currentAmplitude = _shipAmplitude;
+            _playerTimeOffset = _shipTimeOffset;
 
             if (_shipHasVariation)
                 ScheduleNextState();
@@ -139,13 +161,14 @@ namespace Route24.GameOff
             StartCoroutine(AdjustSignalStrengthRoutine());
             UpdateUIText();
             _signalsStopped = false;
+            
+            // Show all the related elements
+            _waveInfoPanel.alpha = 1f;
+            _waveCanvas.alpha = 1f;
         }
 
         public void StopSignals()
         {
-
-            gameObject.SetActive(false);
-
             _signalsStopped = true;
 
             _shipAmplitude = 0.05f;
@@ -155,6 +178,84 @@ namespace Route24.GameOff
             _signalStrength = 1f;
 
             Debug.Log("[UIWaveform] Signals stopped — flatline.");
+        }
+
+        public void StartBootSequence()
+        {
+            _isBooting = true;
+            _bootPanel.alpha = 1f;
+            _bootLoaderFill.fillAmount = 0f;
+            StartCoroutine(BootSequence());
+        }
+
+        private IEnumerator BootSequence()
+        {
+            float bootDuration = 3f;
+            float elapsed = 0f;
+
+            while (elapsed < bootDuration)
+            {
+                elapsed += Time.deltaTime;
+                _bootLoaderFill.fillAmount = Mathf.Clamp01(elapsed / bootDuration);
+                yield return null;
+            }
+            
+            float fadeDuration = 1f;
+
+            for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+            {
+                float a = 1f - (t / fadeDuration);
+                _bootPanel.alpha = a;
+                yield return null;
+            }
+
+            _bootPanel.alpha = 0f;
+            
+            // if (_waveCanvas)
+            //     _waveCanvas.alpha = 1f;
+            
+            if (_waveInfoPanel)
+                _waveInfoPanel.alpha = 1f;
+
+            _isBooting = false;
+            
+            ParentController.EndBootSequence();
+        }
+        
+        public void SetTutorialModeWave(
+            float shipAmplitude,
+            float shipFrequency,
+            float shipOffset,
+            float playerAmplitude,
+            float playerFrequency,
+            float playerOffset,
+            float holdtimer)
+        {
+            _tutorialMode = true;
+
+            _tutorialShipAmp = shipAmplitude;
+            _tutorialShipFreq = shipFrequency;
+            _tutorialShipOffset = shipOffset;
+
+            _playerAmplitude = playerAmplitude;
+            _playerFrequency = playerFrequency;
+            _playerTimeOffset = playerOffset;
+
+            // Force clean state
+            _currentMatchPercent = 0f;
+            _holdTimer = 0f;
+            _signalsStopped = false;
+
+            // Prevent normal mode from interfering
+            _currentState = SignalState.Normal;
+            _canMatch = false;
+            _signalsStopped = false;
+
+            _holdDuration = holdtimer;
+
+            _waveCanvas.alpha = 1f;
+
+            UpdateUIText();
         }
 
         // ─────────────────────────────────────────────
@@ -197,8 +298,20 @@ namespace Route24.GameOff
 
             Vector2 prev = Vector2.zero;
             bool prevValid = false;
+            float ampUsed = 0f;
 
-            float ampUsed = allowState ? _currentAmplitude * _signalStrength : amplitude;
+            if (_tutorialMode && allowState)
+            {
+                // Ship wave only
+                ampUsed = _tutorialShipAmp;
+                frequency = _tutorialShipFreq;
+                timeOffset = _tutorialShipOffset + _timeOffset;
+            }
+            else
+            {
+                ampUsed = allowState ? _currentAmplitude * _signalStrength : amplitude;
+            }
+            
             bool flatline = allowState && _currentState == SignalState.Flatline;
 
             for (int i = 0; i < _resolution; i++)
@@ -249,6 +362,13 @@ namespace Route24.GameOff
         {
             if (!Application.isPlaying || _signalsStopped)
                 return;
+            
+            if (_tutorialMode)
+            {
+                RunTutorialMode();
+                SetVerticesDirty();
+                return;
+            }
 
             //if (_shipHasVariation)  // this is making the game harder.
             //    HandleShipBehavior();
@@ -260,6 +380,58 @@ namespace Route24.GameOff
 
             UpdateUIText();
             SetVerticesDirty();
+        }
+        
+        private void RunTutorialMode()
+        {
+            for (int i = 0; i < _visibilityMask.Length; i++)
+                _visibilityMask[i] = true;
+            
+            _currentState = SignalState.Normal;
+            _canMatch = true;
+            _signalsStopped = false;
+            _currentAmplitude = _shipAmplitude;
+            _signalStrength = 1f;
+            
+            float diff = 0f;
+
+            for (int i = 0; i < _resolution; i++)
+            {
+                float t = (i / (float)_resolution) * Mathf.PI * 2f;
+
+                float shipY = Mathf.Sin(t * _tutorialShipFreq + _tutorialShipOffset) * _tutorialShipAmp;
+                float playerY = Mathf.Sin(t * _playerFrequency + _playerTimeOffset) * _playerAmplitude;
+
+                diff += Mathf.Abs(shipY - playerY);
+            }
+
+            float avg = diff / _resolution;
+            
+            float maxDiff = Mathf.Max(0.001f, _tutorialShipAmp + _playerAmplitude);
+            _currentMatchPercent = (1f - Mathf.Clamp01(avg / maxDiff)) * 100f;
+            
+            if (_currentMatchPercent > 90f)
+            {
+                _holdTimer += Time.deltaTime;
+                
+                if (_holdTimer >= _holdDuration)
+                {
+                    _tutorialMode = false;
+                    _completePanel.alpha = 1f;
+                    _waveInfoPanel.alpha = 0f;
+                    _signalsStopped = true;
+                    
+                    ParentController.ExitFromTutorialSuccess();
+
+                    ServiceLocator.Get<EventHub>()?.Publish(new ScopeCalibrationCompleteEvent());
+                }
+            }
+            else
+            {
+                _holdTimer = 0;
+            }
+
+            UpdateUIText();
         }
 
         /// <summary>Updates text fields with current match and hold values.</summary>
@@ -322,8 +494,7 @@ namespace Route24.GameOff
                 _currentState = SignalState.Flatline;
                 _canMatch = false;
 
-                if (_signalLockedIndicator)
-                    _signalLockedIndicator.gameObject.SetActive(false);
+                _completePanel.alpha = 0f;
 
                 StartCoroutine(EndStateAfterDelay(_flatlineDuration, true));
             }
@@ -357,22 +528,41 @@ namespace Route24.GameOff
                 _holdTimer += Time.deltaTime;
                 if (_holdTimer >= _holdDuration && !_isLocked)
                 {
+                    ParentController.WaveMatched();
                     _isLocked = true;
                     Debug.Log("[WaveMatch] Signal Locked!");
 
                     StopSignals();
-                    if (_signalLockedIndicator)
-                        _signalLockedIndicator.gameObject.SetActive(true);
+                    _completePanel.alpha = 1f;
                 }
             }
             else
             {
-                if (_isLocked && _signalLockedIndicator)
-                    _signalLockedIndicator.gameObject.SetActive(false);
+                if (_isLocked)
+                    _completePanel.alpha = 0f;
 
                 _isLocked = false;
                 _holdTimer = Mathf.Max(0f, _holdTimer - Time.deltaTime * _drainSpeed);
             }
+        }
+        
+        public void SetMatchUIVisible(bool visible)
+        {
+            if (_matchPercentText)
+                _matchPercentText.gameObject.SetActive(visible);
+
+            if (_timerText)
+                _timerText.gameObject.SetActive(visible);
+        }
+        
+        public void ResetMatchStateForNewSession()
+        {
+            _currentMatchPercent = 0f;
+            _holdTimer = 0f;
+            _isLocked = false;
+            _completePanel.alpha = 0f;
+
+            UpdateUIText();
         }
 
         // ─────────────────────────────────────────────

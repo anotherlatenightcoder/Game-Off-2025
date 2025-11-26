@@ -14,6 +14,8 @@ namespace Route24.GameOff
         [SerializeField] private float _minAngle = -30f;
         [SerializeField] private float _maxAngle = 30f;
         [SerializeField] private float _toggleDuration = 0.5f;
+        [SerializeField] private string _toggleOnText = "Switch On [E]";
+        [SerializeField] private string _toggleOffText = "Switch Off [E]";
 
         private Coroutine _toggleRoutine;
         [SerializeField] private float _currentAngle;
@@ -83,7 +85,7 @@ namespace Route24.GameOff
         }
 
         // IInteractable Implementation
-        public string GetInteractionText() => IsActive ? "Switch Off [E]" : "Switch On [E]";
+        public string GetInteractionText() => IsActive ? _toggleOffText : _toggleOnText;
         public bool CanInteract() => true;
         public bool CanShowMessage() => true;
 

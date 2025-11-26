@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Route24.GameOff
 {
-    public class TubeClockController : MonoBehaviour
+    public class TubeClockController : MonoBehaviour, ISceneInitializable
     {
         [Header("Digit References")]
         [SerializeField] private TextMeshPro _digit1;
@@ -27,14 +27,14 @@ namespace Route24.GameOff
         private EventHub _eventHub;
         private GameManager _gameManager;
         
-        private void Start()
+        public void SceneInitialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<ShipArrivedForInspectionEvent>(e => ResetClock());
-            _eventHub.Subscribe<InspectionStartedEvent>(e => StartClock(e.Ship.ShipInspectionTime));
-            _eventHub.Subscribe<InspectionCompletedEvent>(e => StopClock(e.Approved, e.TimedOut));
+            _eventHub.Subscribe<DayEndedEvent>(e => ResetClock()); // Reset clock at end of day
+            _eventHub.Subscribe<DayStartedEvent>(e => StartClock(ConstGameStats.DayTime)); // start clock at start of day
+            // _eventHub.Subscribe<InspectionCompletedEvent>(e => StopClock(e.Approved, e.TimedOut));
             
             CacheDigitMaterials();
             UpdateDisplay(0);
@@ -108,8 +108,16 @@ namespace Route24.GameOff
         
         private void UpdateDisplay(int seconds)
         {
-            string display = Mathf.Clamp(seconds, 0, 9999).ToString("0000");
+            seconds = Mathf.Max(0, seconds);
+            
+            int minutes = seconds / 60;
+            int secs = seconds % 60;
+            
+            minutes = Mathf.Clamp(minutes, 0, 99);
 
+            string display = string.Format("{0:00}{1:00}", minutes, secs);
+
+            // Now assign digits
             _digit1.text = display[0].ToString();
             _digit2.text = display[1].ToString();
             _digit3.text = display[2].ToString();

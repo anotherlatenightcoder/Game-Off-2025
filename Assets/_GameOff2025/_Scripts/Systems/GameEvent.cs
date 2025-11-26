@@ -26,10 +26,68 @@ namespace Route24.Core
         public string SceneName;
         public SceneUnloadedEvent(string sceneName) => SceneName = sceneName;
     }
+    
+    // ───────────────────────────────
+    // Tutorial-related events
+    // ───────────────────────────────
+    
+    /// <summary>
+    /// Fires once the scene loads.
+    /// </summary>
+    public struct TutorialStartedEvent { }
+    
+    /// <summary>
+    /// Fired when the player turns on the main console / power switch.
+    /// </summary>
+    public struct ConsolePoweredOnEvent { }
+
+    /// <summary>
+    /// Fired when the oscilloscope tutorial calibration test completes.
+    /// </summary>
+    public struct ScopeCalibrationCompleteEvent { }
+    
+    /// <summary>
+    /// Fired when the player turns on the keypad.
+    /// </summary>
+    public struct KeypadPoweredOnEvent { }
+
+    /// <summary>
+    /// Fired when any 4-digit test code is entered during the tutorial.
+    /// </summary>
+    public struct KeypadTestEnteredEvent { }
+
+    /// <summary>
+    /// Fired when we trigger the light switch.
+    /// </summary>
+    public struct LightsPoweredOnEvent
+    {
+        public bool Instant;
+
+        public LightsPoweredOnEvent(bool instant)
+        {
+            Instant = instant;   
+        }
+    }
+
+    /// <summary>
+    /// Fired when the player pulls the lever to open the docking gates and start Day 1.
+    /// </summary>
+    public struct DockGatesOpenedEvent { }
+    
+    /// <summary>
+    /// Fired when the player pulls the lever to open the docking gates and start Day 1.
+    /// </summary>
+    public struct TutorialCompletedEvent { }
 
     // ───────────────────────────────
     // Game-related events
     // ───────────────────────────────
+    
+    /// <summary>
+    /// Fired after the player has aligned their signal with the ship for the hold duration
+    /// </summary>
+    public struct WaveMatchedEvent { }
+    
     public struct ShipArrivedForInspectionEvent
     {
         public int ShipIndex;
@@ -50,16 +108,36 @@ namespace Route24.Core
             Ship = ship;
         }
     }
+    
+    /// <summary>
+    /// Fired whenever we receive or deduct money
+    /// </summary>
+    public struct TransactionAddedEvent
+    {
+        public Transaction Transaction;
+
+        public TransactionAddedEvent(Transaction t)
+        {
+            Transaction = t;
+        }
+    }
+    
+    /// <summary>
+    /// Fired once the user entered 4 digits that match.
+    /// </summary>
+    public struct InspectionKeypadCodeMatchedEvent { }
 
     public struct InspectionCompletedEvent
     {
         public bool Approved;
+        public bool Valid;
         public bool TimedOut;
         public ShipProfile Ship;
 
-        public InspectionCompletedEvent(bool approved, bool timedOut, ShipProfile ship)
+        public InspectionCompletedEvent(bool approved, bool valid, bool timedOut, ShipProfile ship)
         {
             Approved = approved;
+            Valid = valid;
             TimedOut = timedOut;
             Ship = ship;
         }

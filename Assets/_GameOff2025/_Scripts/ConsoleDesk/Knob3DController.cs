@@ -10,6 +10,7 @@ namespace Route24.GameOff
         [SerializeField] private float _minValue = 0.05f;
         [SerializeField] private float _maxValue = 1f;
         [SerializeField] private string _label = "Knob";
+        [SerializeField] private float _currentValue = 0.5f;
 
         // set below 3 values according to fbx model
         private float _minAngle = -80f;
@@ -33,21 +34,51 @@ namespace Route24.GameOff
         {
             _parent = parent;
         }
+        
+        public void SetKnobRotationFromValue(float value)
+        {
+            _currentValue = Mathf.Clamp(value, _minValue, _maxValue);
+            _currentAngle = ValueToAngle(_currentValue);
+
+            if (_knobMesh != null)
+                _knobMesh.localRotation = Quaternion.Euler(0f, _currentAngle, 0f);
+        }
+        
+        public void SetValueWithoutEvents(float value)
+        {
+            float val = Mathf.Clamp(value, _minValue, _maxValue);
+            SetKnobRotationFromValue(val);
+        }
 
         public float GetCurrentValue()
         {
-            float t = Mathf.InverseLerp(_minAngle, _maxAngle, _currentAngle);
-            return Mathf.Lerp(_minValue, _maxValue, t);
+            return _currentValue;
         }
 
         private void OnMouseDown()
         {
             if (!_parent || !_parent.IsFocused) return;
+            
+            // BLOCK interaction during tutorial boot sequence
+            if (_parent.IsTutorialBooting)
+                return;
 
             _isDragging = true;
             _lastMousePos = Input.mousePosition;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Confined; // this should not be here
+        }
+        
+        private float ValueToAngle(float value)
+        {
+            float t = Mathf.InverseLerp(_minValue, _maxValue, value);
+            return Mathf.Lerp(_minAngle, _maxAngle, t);
+        }
+
+        private float AngleToValue(float angle)
+        {
+            float t = Mathf.InverseLerp(_minAngle, _maxAngle, angle);
+            return Mathf.Lerp(_minValue, _maxValue, t);
         }
 
         private void OnMouseDrag()
@@ -86,6 +117,7 @@ namespace Route24.GameOff
                 return;
 
             _currentAngle = Mathf.Clamp(_currentAngle + blendedDelta, _minAngle, _maxAngle);
+            _currentValue = AngleToValue(_currentAngle);
         }
 
         private void UpdateRotationView()

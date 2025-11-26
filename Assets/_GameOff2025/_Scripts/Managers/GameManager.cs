@@ -20,6 +20,7 @@ namespace Route24.GameOff
         private EventHub _eventHub;
         private bool inspectionActive = false;
         private Coroutine _dayTimerCoroutine;
+        private bool _tutorialCompleted = false;
         
         public static void SetFocusMode(bool value)
         {
@@ -35,13 +36,15 @@ namespace Route24.GameOff
 
         private void OnSceneLoaded(SceneLoadedEvent scene)
         {
-            StartCoroutine(DelayedStartOfDay());
+            StartCoroutine(StartTutorialRoutine());
         }
         
         private IEnumerator DelayedStartOfDay()
         {
             Debug.Log("[GameManager] Preparing environment...");
             yield return new WaitForSeconds(ConstGameStats.DelayBeforeDayStart);
+            
+            state = GameplayState.WaitingForShip;
 
             Debug.Log("[GameManager] Starting first day...");
             StartNewDay();
@@ -66,6 +69,9 @@ namespace Route24.GameOff
         
         public void StartNewDay()
         {
+            if (CurrentGameplayState == GameplayState.Tutorial)
+                return;
+            
             Debug.Log($"=== Starting Day {currentDay} ===");
             
             _eventHub?.Publish(new DayStartedEvent(currentDay)); // CargoManifestManager should learn new day start before ShipManager
@@ -108,7 +114,7 @@ namespace Route24.GameOff
             
             _shipManager.HandleInspectionComplete(timedOut, approved); 
             
-            _eventHub?.Publish(new InspectionCompletedEvent(approved, timedOut, ship));
+            _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship));
         }
 
         private IEnumerator WaitThenNextShip()
@@ -136,6 +142,31 @@ namespace Route24.GameOff
         {
             yield return new WaitForSeconds(ConstGameStats.DayTime);
             EndOfDay();
+        }
+        
+        private IEnumerator StartTutorialRoutine()
+        {
+            state = GameplayState.Tutorial;
+            
+            yield return new WaitForSeconds(1.0f);
+            
+            _eventHub?.Publish(new TutorialStartedEvent());
+            
+            while (!_tutorialCompleted)
+                yield return null;
+        }
+
+        public void CompleteTutorial()
+        {
+            if (_tutorialCompleted)
+                return;
+            
+            _tutorialCompleted = true;
+            
+            _eventHub?.Publish(new TutorialCompletedEvent());
+            _eventHub?.Publish(new LightsPoweredOnEvent(true));
+            
+            StartCoroutine(DelayedStartOfDay());
         }
     }
 }
