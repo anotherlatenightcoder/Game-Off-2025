@@ -22,6 +22,7 @@ namespace Route24.GameOff
 
         [Header("Interaction")]
         [SerializeField] private string interactionText = "Decline [E]";
+        [SerializeField] private string _buttonSoundString = "";
 
         private GameManager _gameManager;
         private EventHub _eventHub;
@@ -106,6 +107,9 @@ namespace Route24.GameOff
             SetVisualState(false);
 
             _gameManager?.CompleteInspection(false);
+            
+            if (_buttonSoundString != "")
+                AudioManager.Instance.PlaySFX(_buttonSoundString);
         }
 
         private void Activate()

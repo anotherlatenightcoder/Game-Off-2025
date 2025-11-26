@@ -12,6 +12,9 @@ namespace Route24.GameOff
         [SerializeField] protected Color _onEmissionColor = Color.white;
         [SerializeField, Range(0f, 5f)] protected float _emissionIntensity = 1f;
         
+        [Header("Audio")]
+        [SerializeField] private string _buttonSoundString = "";
+        
         private GameManager _gameManager;
         private Material _instanceMaterial;
 
@@ -51,6 +54,9 @@ namespace Route24.GameOff
         {
             base.OnToggledOn();
             SetEmission(true);
+            
+            if (_buttonSoundString != "")
+                AudioManager.Instance.PlaySFX(_buttonSoundString);
             
             _eventHub?.Publish(new DockGatesOpenedEvent());
         }

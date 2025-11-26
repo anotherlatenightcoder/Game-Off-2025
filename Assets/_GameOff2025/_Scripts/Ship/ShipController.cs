@@ -51,6 +51,8 @@ namespace Route24.GameOff
             StopBobbing();
             StopAllCoroutines();
             StartCoroutine(MoveRoutine(_exitPoint.position, _moveDuration, OnExited));
+            
+            AudioManager.Instance.PlaySFX("SHIP_APPROVED");
         }
 
         public void Sink()
@@ -58,6 +60,8 @@ namespace Route24.GameOff
             StopBobbing();
             StopAllCoroutines();
             StartCoroutine(MoveRoutine(_sinkPoint.position, _sinkDuration, OnSunk));
+            
+            AudioManager.Instance.PlaySFX("SHIP_SINK");
         }
         
         public void Decline()
@@ -65,6 +69,8 @@ namespace Route24.GameOff
             StopBobbing();
             StopAllCoroutines();
             StartCoroutine(DeclineRoutine());
+            
+            AudioManager.Instance.PlaySFX("SHIP_DECLINED");
         }
         
         private IEnumerator MoveRoutine(Vector3 target, float duration, System.Action onComplete)
@@ -94,6 +100,8 @@ namespace Route24.GameOff
                 StopBobbing();
                 _bobRoutine = StartCoroutine(BobbingRoutine());
             }
+            
+            AudioManager.Instance.PlaySFX("SHIP_ARRIVED");
         }
 
         private void OnExited()
@@ -101,6 +109,8 @@ namespace Route24.GameOff
             Debug.Log("[ShipController] Ship has left the dock.");
             Destroy(gameObject);
             _gameManager.OnShipExitComplete();
+            
+            AudioManager.Instance.PlaySFX("SHIP_EXIT");
         }
 
         private void OnSunk()

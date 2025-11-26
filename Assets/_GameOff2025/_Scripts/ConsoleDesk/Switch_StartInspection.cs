@@ -7,6 +7,7 @@ namespace Route24.GameOff
     {
         [SerializeField] private IndicatorLight _indicatorLight;
         [SerializeField] private BigButton _bigButton;
+        [SerializeField] private string _buttonSoundString = "";
         
         public string interactionText = "Start Inspection [E]";
         
@@ -53,6 +54,9 @@ namespace Route24.GameOff
                 Debug.Log("Switch flipped — starting inspection!");
                 _indicatorLight?.SetLight(false);
                 _gameManager.StartInspection();
+                
+                if (_buttonSoundString != "")
+                    AudioManager.Instance.PlaySFX(_buttonSoundString);
             }
         }
         

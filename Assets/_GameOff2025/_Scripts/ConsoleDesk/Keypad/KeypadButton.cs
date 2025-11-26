@@ -45,6 +45,9 @@ namespace Route24.GameOff
             if (_controller == null) return;
 
             _controller.PressDigit(_digit);
+            
+            AudioManager.Instance.PlaySFX("GENERIC_BUTTON");
+            
             AnimatePress();
             FlashColor();
         }

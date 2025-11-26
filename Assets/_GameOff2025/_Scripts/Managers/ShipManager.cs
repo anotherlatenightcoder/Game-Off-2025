@@ -95,6 +95,9 @@ namespace Route24.GameOff
                 _currentShipController = shipInstance.GetComponent<ShipController>();
                 _currentShipController.Initialize(_shipSpawn, _shipDock, _shipExit, _shipSink);
                 _currentShipController.MoveToDock();
+                
+                AudioManager.Instance.PlaySFX("SHIP_SPAWN");
+                
                 Debug.Log($"Ship incoming: {_currentShipProfile.ShipName}");
 
                 var shipCargo = _currentShipProfile.CargoList;
