@@ -37,27 +37,52 @@ namespace Route24.Core
     public struct TutorialStartedEvent { }
     
     /// <summary>
-    /// Fired when the player turns on the main console / power switch.
+    /// 1. Fired when the players presses the Inspection switch
     /// </summary>
-    public struct ConsolePoweredOnEvent { }
-
-    /// <summary>
-    /// Fired when the oscilloscope tutorial calibration test completes.
-    /// </summary>
-    public struct ScopeCalibrationCompleteEvent { }
+    public struct Tutorial_OnInspectionStartedEvent { }
     
     /// <summary>
-    /// Fired when the player turns on the keypad.
+    /// 2. Fired when the players enters the cargo manifest
     /// </summary>
-    public struct KeypadPoweredOnEvent { }
-
+    public struct Tutorial_OnCargoFocusedEvent { }
+    
     /// <summary>
-    /// Fired when any 4-digit test code is entered during the tutorial.
+    /// 3. Fired when the players scans a cargo entry
     /// </summary>
-    public struct KeypadTestEnteredEvent { }
-
+    public struct Tutorial_OnCargoScannedEvent { }
+    
     /// <summary>
-    /// Fired when we trigger the light switch.
+    /// 4. Fired when the player turns on the main console / power switch.
+    /// </summary>
+    public struct Tutorial_ConsolePoweredOnEvent { }
+    
+    /// <summary>
+    /// 5. Fired when we focus the oscillator
+    /// </summary>
+    public struct Tutorial_ScopeFocusEvent { }
+    
+    /// <summary>
+    /// 6. Fired when the oscilloscope tutorial calibration test completes.
+    /// </summary>
+    public struct Tutorial_ScopeCalibrationCompleteEvent { }
+    
+    /// <summary>
+    /// 7. Fired when the player turns on the keypad.
+    /// </summary>
+    public struct Tutorial_KeypadPoweredOnEvent { }
+    
+    /// <summary>
+    /// 8. Fired when any 4-digit test code is entered during the tutorial.
+    /// </summary>
+    public struct Tutorial_KeypadTestEnteredEvent { }
+    
+    /// <summary>
+    /// 9. Fired when when we approve/decline the ship
+    /// </summary>
+    public struct Tutorial_ShipApproveDeclineEvent { }
+    
+    /// <summary>
+    /// 10. Fired when we trigger the light switch.
     /// </summary>
     public struct LightsPoweredOnEvent
     {
@@ -70,9 +95,9 @@ namespace Route24.Core
     }
 
     /// <summary>
-    /// Fired when the player pulls the lever to open the docking gates and start Day 1.
+    /// 11. Fired when the player pulls the lever to open the docking gates and start Day 1.
     /// </summary>
-    public struct DockGatesOpenedEvent { }
+    public struct Tutorial_DockGatesOpenedEvent { }
     
     /// <summary>
     /// Fired when the player pulls the lever to open the docking gates and start Day 1.

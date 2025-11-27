@@ -1,3 +1,4 @@
+using System.Collections;
 using Route24.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -10,22 +11,12 @@ namespace Route24.GameOff
         [SerializeField] private float _skipTimerLength = 2f;
         [SerializeField] private KeypadController _keypad;
         
-        public bool TutorialStep1Completed => _step1_PowerOn;
-        public bool TutorialStep2Completed => _step2_ScopeCalibrated;
-        public bool TutorialStep3Completed => _step3_KeypadPowerOn;
-        public bool TutorialStep4Completed => _step4_CodeEntered;
-        public bool TutorialStep5Completed => _step4_CodeEntered;
+        private bool[] _completedSteps = new bool[12]; // I'm cheating by not using 0, shhh
+        
         public static TutorialController Instance;
         
         private GameManager _gameManager;
         private EventHub _eventHub;
-
-        private bool _step1_PowerOn;
-        private bool _step2_ScopeCalibrated;
-        private bool _step3_KeypadPowerOn;
-        private bool _step4_CodeEntered;
-        private bool _step5_LigthsPowerOn;
-
         private bool _hasInteractedYet = false;
         private float _skipTimer = 0f;
 
@@ -36,14 +27,57 @@ namespace Route24.GameOff
             _gameManager = ServiceLocator.Get<GameManager>();
             _eventHub = ServiceLocator.Get<EventHub>();
             
-            _eventHub.Subscribe<ConsolePoweredOnEvent>(OnPowerOn);
-            _eventHub.Subscribe<ScopeCalibrationCompleteEvent>(OnScopeComplete);
-            _eventHub.Subscribe<KeypadPoweredOnEvent>(OnKeypadPowerOn);
-            _eventHub.Subscribe<KeypadTestEnteredEvent>(OnCodeEntered);
+            // New events to listen to
+            _eventHub.Subscribe<Tutorial_OnInspectionStartedEvent>(OnInspectionStarted);
+            _eventHub.Subscribe<Tutorial_OnCargoFocusedEvent>(OnCargoFocused);
+            _eventHub.Subscribe<Tutorial_OnCargoScannedEvent>(OnCargoScanned);
+            _eventHub.Subscribe<Tutorial_ConsolePoweredOnEvent>(OnPowerOn);
+            _eventHub.Subscribe<Tutorial_ScopeFocusEvent>(OnScopeFocus);
+            _eventHub.Subscribe<Tutorial_ScopeCalibrationCompleteEvent>(OnScopeComplete);
+            _eventHub.Subscribe<Tutorial_KeypadPoweredOnEvent>(OnKeypadPowerOn);
+            _eventHub.Subscribe<Tutorial_KeypadTestEnteredEvent>(OnCodeEntered);
+            _eventHub.Subscribe<Tutorial_ShipApproveDeclineEvent>(OnShipApproveDecline);
             _eventHub.Subscribe<LightsPoweredOnEvent>(OnLightsPowerOnEntered);
-            _eventHub.Subscribe<DockGatesOpenedEvent>(OnGatesOpened);
+            _eventHub.Subscribe<Tutorial_DockGatesOpenedEvent>(OnGatesOpened);
             
-            _eventHub.Subscribe<TutorialStartedEvent>(evt => ShowSkipUI());
+            _eventHub.Subscribe<TutorialStartedEvent>(evt => StartTutorial());
+        }
+
+        private void OnShipApproveDecline(Tutorial_ShipApproveDeclineEvent obj)
+        {
+            CompleteStep(TutorialStep.ShipApproveDecline);
+        }
+
+        private void OnCargoScanned(Tutorial_OnCargoScannedEvent obj)
+        {
+            CompleteStep(TutorialStep.CargoEntryScanned);
+        }
+
+        private void OnCargoFocused(Tutorial_OnCargoFocusedEvent obj)
+        {
+            CompleteStep(TutorialStep.CargoTerminalFocus);
+        }
+
+        public bool IsStepCompleted(TutorialStep step)
+        {
+            return _completedSteps[(int)step];
+        }
+        
+        private void CompleteStep(TutorialStep step)
+        {
+            _completedSteps[(int)step] = true;
+            _tutorialUI.ShowStep((int)step);
+            _tutorialUI.StrikeStep((int)step-1);
+
+            if (step == TutorialStep.DockGatesOpened)
+            {
+                _tutorialUI.ClearAll();
+            }
+        }
+
+        private void OnInspectionStarted(Tutorial_OnInspectionStartedEvent obj)
+        {
+            CompleteStep(TutorialStep.InspectionStarted);
         }
 
         private void Update()
@@ -63,7 +97,7 @@ namespace Route24.GameOff
                     if (_skipTimer >= _skipTimerLength)
                     {
                         HideSkipUI();
-                        CompleteTutorialNow(true);
+                        StartCoroutine(CompleteTutorialNow(true));
                     }
                 }
                 else
@@ -74,73 +108,68 @@ namespace Route24.GameOff
             }
         }
 
-        private void OnPowerOn(ConsolePoweredOnEvent evt)
+        private void OnPowerOn(Tutorial_ConsolePoweredOnEvent evt)
         {
-            _step1_PowerOn = true;
-            _hasInteractedYet = true;
-            _tutorialUI.SetStepCompleted(1);
-            HideSkipUI();
+            CompleteStep(TutorialStep.ConsolePoweredOn);
             
             var scope = ServiceLocator.Get<OscilloscopeController>();
             if (scope != null)
                 scope.StartBootSequence();
         }
-
-        private void OnScopeComplete(ScopeCalibrationCompleteEvent evt)
+        
+        private void OnScopeFocus(Tutorial_ScopeFocusEvent evt)
         {
-            if (!_step1_PowerOn) return;
-            _step2_ScopeCalibrated = true;
-            _tutorialUI.SetStepCompleted(2);
+            CompleteStep(TutorialStep.OscillatorFocus);
         }
         
-        private void OnKeypadPowerOn(KeypadPoweredOnEvent evt)
+        private void OnScopeComplete(Tutorial_ScopeCalibrationCompleteEvent evt)
         {
-            if (!_step2_ScopeCalibrated) return;
-            _step3_KeypadPowerOn = true;
-            _keypad.SetPowered(true);
-            _tutorialUI.SetStepCompleted(3);
+            CompleteStep(TutorialStep.CalibrationComplete);
         }
         
-        private void OnCodeEntered(KeypadTestEnteredEvent evt)
+        private void OnKeypadPowerOn(Tutorial_KeypadPoweredOnEvent evt)
         {
-            if (!_step3_KeypadPowerOn) return;
-            _step4_CodeEntered = true;
-            _tutorialUI.SetStepCompleted(4);
+            CompleteStep(TutorialStep.KeypadPowerOn);
+        }
+        
+        private void OnCodeEntered(Tutorial_KeypadTestEnteredEvent evt)
+        {
+            CompleteStep(TutorialStep.CodeEntered);
         }
         
         private void OnLightsPowerOnEntered(LightsPoweredOnEvent evt)
         {
-            if (!_step4_CodeEntered) return;
-            _step5_LigthsPowerOn = true;
-            _tutorialUI.SetStepCompleted(5);
+            CompleteStep(TutorialStep.LightsPoweredOn);
+        }
+        
+        private void OnGatesOpened(Tutorial_DockGatesOpenedEvent evt)
+        {
+            CompleteStep(TutorialStep.DockGatesOpened);
+
+            StartCoroutine(CompleteTutorialNow(false));
         }
 
-        private void OnGatesOpened(DockGatesOpenedEvent evt)
+        private IEnumerator CompleteTutorialNow(bool instant)
         {
-            if (!_step5_LigthsPowerOn) return;
-            _tutorialUI.SetStepCompleted(6);
-            CompleteTutorialNow(false);
-        }
-
-        private void CompleteTutorialNow(bool instant)
-        {
+            yield return new WaitForSeconds(1f);
             // I've added the instant flag because when we skip the tutorial,
             // we want to instantly turn everything on. Currently there is a bug if
             // do the last task in the tutorial, during the switch flip animation it 
             // suddenly snaps because of this...
-            _tutorialUI.HideChecklist();
+            _tutorialUI.ClearAll();
             _gameManager.CompleteTutorial();
-        }
-
-        private void ShowSkipUI()
-        {
-            _tutorialUI.ShowSkipPrompt();
-            _tutorialUI.ShowChecklist("Power on the console");
         }
 
         private void HideSkipUI()
         {
             _tutorialUI.HideSkipPrompt();
+        }
+
+        private void StartTutorial()
+        {
+            _tutorialUI.ClearAll();
+            _tutorialUI.ShowStep(0);
+            _tutorialUI.ShowSkip();
         }
     }   
 }

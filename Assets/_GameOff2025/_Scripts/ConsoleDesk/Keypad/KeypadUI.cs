@@ -27,7 +27,7 @@ namespace Route24.GameOff
             
             // Yes I know, these should go to their own functions but its the usual last 
             // minute jam rush so I'm just inlining the logic :shrug:
-            _eventHub.Subscribe<KeypadPoweredOnEvent>(evt =>
+            _eventHub.Subscribe<Tutorial_KeypadPoweredOnEvent>(evt =>
             {
                 ResetDisplay();
                 Show();

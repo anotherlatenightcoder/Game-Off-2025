@@ -35,7 +35,9 @@ namespace Route24.GameOff
         public override bool CanInteract()
         {
             // Lets only allow toggling this in the tutorial (maybe we reset it each day?)
-            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned) &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.ConsolePoweredOn))
                 return true;
             
             return false;
@@ -49,7 +51,7 @@ namespace Route24.GameOff
             if (_buttonSoundString != "")
                 AudioManager.Instance.PlaySFX(_buttonSoundString);
             
-            _eventHub?.Publish(new ConsolePoweredOnEvent());
+            _eventHub?.Publish(new Tutorial_ConsolePoweredOnEvent());
         }
         
         protected override void OnToggledOff()
@@ -60,7 +62,12 @@ namespace Route24.GameOff
 
         public override bool CanShowMessage()
         {
-            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial && !IsActive);
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial && !IsActive &&
+                TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned) &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.ConsolePoweredOn))
+                return true;
+
+            return false;
         }
         
         protected void SetEmission(bool enabled)

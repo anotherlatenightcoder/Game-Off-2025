@@ -162,9 +162,10 @@ namespace Route24.GameOff
                 return;
             
             _tutorialCompleted = true;
+            state = GameplayState.WaitingForShip;
             
-            _eventHub?.Publish(new TutorialCompletedEvent());
             _eventHub?.Publish(new LightsPoweredOnEvent(true));
+            _eventHub?.Publish(new TutorialCompletedEvent());
             
             StartCoroutine(DelayedStartOfDay());
         }

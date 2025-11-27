@@ -37,7 +37,7 @@ namespace Route24.GameOff
             ClearBannedCargo();
         }
 
-        private void GenerateDailyBannedList(int day)
+        public void GenerateDailyBannedList(int day)
         {
             _bannedCargo.Clear();
 

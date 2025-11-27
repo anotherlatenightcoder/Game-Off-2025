@@ -423,7 +423,7 @@ namespace Route24.GameOff
                     
                     ParentController.ExitFromTutorialSuccess();
 
-                    ServiceLocator.Get<EventHub>()?.Publish(new ScopeCalibrationCompleteEvent());
+                    ServiceLocator.Get<EventHub>()?.Publish(new Tutorial_ScopeCalibrationCompleteEvent());
                 }
             }
             else

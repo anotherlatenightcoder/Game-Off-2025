@@ -138,6 +138,7 @@ GameObject:
   - component: {fileID: 3381045848970791908}
   - component: {fileID: 1820642668975850561}
   - component: {fileID: 4512835067917725835}
+  - component: {fileID: 4574745692143787711}
   m_Layer: 0
   m_Name: Sub_2
   m_TagString: Untagged
@@ -218,6 +219,24 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4574745692143787711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2711224037128196446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d95fb01160b61042981dad3b228451d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipController
+  _moveDuration: 3
+  _sinkDuration: 5
+  _enableBobbing: 1
+  _bobAmplitude: 0.05
+  _bobFrequency: 1.5
+  _bobRotation: 2
 --- !u!1 &6157456748274175058
 GameObject:
   m_ObjectHideFlags: 0

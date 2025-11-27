@@ -23,11 +23,6 @@ namespace Route24.GameOff
         private GameManager _gameManager;
         private EventHub _eventHub;
 
-        private bool _tutorialMode => 
-            _gameManager.CurrentGameplayState == GameplayState.Tutorial &&
-            TutorialController.Instance.TutorialStep3Completed &&
-            !TutorialController.Instance.TutorialStep4Completed;
-
         public void SceneInitialize()
         {
             _gameManager = ServiceLocator.Get<GameManager>();
@@ -47,6 +42,12 @@ namespace Route24.GameOff
                 SetPowered(true);
                 ResetCode();
             });
+            
+            _eventHub.Subscribe<Tutorial_KeypadPoweredOnEvent>(evt =>
+            {
+                SetPowered(true);
+                ResetCode();
+            });
         }
         
         public void SetPowered(bool powered)
@@ -62,9 +63,9 @@ namespace Route24.GameOff
         public void PressDigit(int digit)
         {
             if (!_powered) return;
-
-            // This is for when we're in the tutorial
-            if (_tutorialMode)
+            
+            // Tutorial specific
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
             {
                 HandleTutorialDigit(digit);
                 return;
@@ -109,10 +110,10 @@ namespace Route24.GameOff
             if (_enteredCode.Length < _codeLength)
                 return;
 
-            if (_enteredCode == "0000" || _enteredCode == "1234")
+            if (_enteredCode == "1234")
             {
                 Debug.Log("[KEYPAD] Tutorial code accepted");
-                _eventHub.Publish(new KeypadTestEnteredEvent());
+                _eventHub.Publish(new Tutorial_KeypadTestEnteredEvent());
                 _lights.FlashGreenStrong();
             }
             else

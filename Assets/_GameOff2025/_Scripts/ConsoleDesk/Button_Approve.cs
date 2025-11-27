@@ -42,6 +42,14 @@ namespace Route24.GameOff
             if (_emissionRenderer)
                 _emissionMaterialInstance = _emissionRenderer.material;
             
+            
+            _eventHub.Subscribe<Tutorial_KeypadTestEnteredEvent>(evt =>
+            {
+                _keycodeConfirmed = true;
+                _waveConfirmed = true;
+                Activate();
+            });
+            
             _eventHub.Subscribe<InspectionKeypadCodeMatchedEvent>(evt =>
             {
                 _keycodeConfirmed = true;
@@ -85,15 +93,18 @@ namespace Route24.GameOff
 
         public bool CanInteract()
         {
-            return _isActive &&
-                   _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && _waveConfirmed && _keycodeConfirmed;
+            if (!_isActive && !_gameManager)
+                return false;
+
+            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial || _gameManager.CurrentGameplayState == GameplayState.Inspecting) && _waveConfirmed && _keycodeConfirmed;
         }
 
         public bool CanShowMessage()
         {
-            return _gameManager &&
-                   _gameManager.CurrentGameplayState == GameplayState.Inspecting && _waveConfirmed && _keycodeConfirmed;
+            if (!_isActive && !_gameManager)
+                return false;
+
+            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial || _gameManager.CurrentGameplayState == GameplayState.Inspecting) && _waveConfirmed && _keycodeConfirmed;
         }
 
         public void OnInteract()
@@ -104,11 +115,18 @@ namespace Route24.GameOff
             Debug.Log("[Button_Approve] Ship approved!");
             
             SetVisualState(false);
-
-            _gameManager?.CompleteInspection(true);
             
             if (_buttonSoundString != "")
                 AudioManager.Instance.PlaySFX(_buttonSoundString);
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                _eventHub?.Publish(new Tutorial_ShipApproveDeclineEvent());
+                Deactivate();
+                return;
+            }
+            
+            _gameManager?.CompleteInspection(true);
         }
 
         private void Activate()

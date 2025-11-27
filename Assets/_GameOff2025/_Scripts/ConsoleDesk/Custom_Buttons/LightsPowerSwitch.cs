@@ -43,8 +43,9 @@ namespace Route24.GameOff
 
         public override bool CanInteract()
         {
-            // Lets only allow toggling this in the tutorial (maybe we reset it each day?)
-            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial && TutorialController.Instance.TutorialStep4Completed)
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                TutorialController.Instance.IsStepCompleted(TutorialStep.ShipApproveDecline) && 
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.LightsPoweredOn))
                 return true;
             
             return false;
@@ -69,7 +70,12 @@ namespace Route24.GameOff
 
         public override bool CanShowMessage()
         {
-            return (_gameManager.CurrentGameplayState == GameplayState.Tutorial && !IsActive && TutorialController.Instance.TutorialStep4Completed);
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                TutorialController.Instance.IsStepCompleted(TutorialStep.ShipApproveDecline) && 
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.LightsPoweredOn))
+                return true;
+
+            return false;
         }
         
         protected void SetEmission(bool enabled)
