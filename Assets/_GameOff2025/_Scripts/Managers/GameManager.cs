@@ -107,7 +107,9 @@ namespace Route24.GameOff
         public void CompleteInspection(bool approved, bool timedOut = false)
         {
             inspectionActive = false;
-            state = GameplayState.WaitingForShip;
+            
+            if(!timedOut)
+                state = GameplayState.WaitingForShip;
             
             var ship = _shipManager.GetCurrentShipProfile();
             bool correct = approved == ship.IsValid && !timedOut;
