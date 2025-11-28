@@ -119,18 +119,24 @@ namespace Route24.GameOff
 
         private IEnumerator WaitThenNextShip()
         {
+            yield return null;
+            
+            if (state != GameplayState.WaitingForShip)
+                yield break;
+            
             yield return new WaitForSeconds(transitionDelay);
+            
             if (state != GameplayState.WaitingForShip)
                 yield break;
             
             _shipManager.SpawnNewShip();
             state = GameplayState.WaitingForShip;
-   
         }
 
         private void EndOfDay()
         {
             state = GameplayState.DayComplete; 
+            StopCoroutine(WaitThenNextShip());
             Debug.Log($"=== End of Day {currentDay} ===");
             
             _eventHub?.Publish(new DayEndedEvent(currentDay));

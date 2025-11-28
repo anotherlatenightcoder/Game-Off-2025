@@ -79,6 +79,9 @@ namespace Route24.GameOff
         
         public void SpawnNewShip()
         {
+            if (_gameManager.CurrentGameplayState != GameplayState.WaitingForShip)
+                return;
+            
             currentShipIndex++;
 
             if (currentShipIndex >= _shipProfiles.Count)

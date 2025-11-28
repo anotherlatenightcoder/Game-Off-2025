@@ -34,7 +34,6 @@ namespace Route24.GameOff
             _eventHub = ServiceLocator.Get<EventHub>();
             
             _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
-            _nextDayButton.onClick.AddListener(OnNextDayButtonClicked);
         }
 
         private void OnDestroy()
@@ -44,6 +43,9 @@ namespace Route24.GameOff
 
         private void OnDayEnded(DayEndedEvent dayEndedEvent)
         {
+            _nextDayButton.onClick.AddListener(OnNextDayButtonClicked);
+            
+            Debug.Log("[EndDayUI] OnDayEnded");
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.Confined;
             
@@ -55,6 +57,8 @@ namespace Route24.GameOff
         
         private void OnNextDayButtonClicked()
         {
+            Debug.Log("OnNextDayButtonClicked");
+            
             Cursor.visible = false;
             _endDayPanel.SetActive(false);
             
