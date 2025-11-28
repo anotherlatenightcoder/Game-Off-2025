@@ -108,7 +108,7 @@ namespace Route24.GameOff
         {
             inspectionActive = false;
             
-            if(!timedOut)
+            if(state != GameplayState.DayComplete)
                 state = GameplayState.WaitingForShip;
             
             var ship = _shipManager.GetCurrentShipProfile();

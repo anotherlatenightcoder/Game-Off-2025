@@ -32,7 +32,7 @@ namespace Route24.GameOff
             _eventHub = ServiceLocator.Get<EventHub>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<DayEndedEvent>(e => ResetClock()); // Reset clock at end of day
+            _eventHub.Subscribe<DayEndedEvent>(e=>StopClock(false, true)); // Reset clock at end of day
             _eventHub.Subscribe<DayStartedEvent>(e => StartClock(ConstGameStats.DayTime)); // start clock at start of day
             // _eventHub.Subscribe<InspectionCompletedEvent>(e => StopClock(e.Approved, e.TimedOut));
             
