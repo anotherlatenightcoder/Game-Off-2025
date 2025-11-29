@@ -7,7 +7,9 @@ namespace Route24.GameOff
 {
     public class UpgradeUIElement : MonoBehaviour
     {
+        [SerializeField] private Image entryBG;
         [SerializeField] private TextMeshProUGUI nameText;
+        [SerializeField] private TextMeshProUGUI tierText;
         [SerializeField] private TextMeshProUGUI costText;
         [SerializeField] private Button buyButton;
         [SerializeField] private GameObject ownedBadge;
@@ -20,8 +22,9 @@ namespace Route24.GameOff
         {
             _data = data;
             _buyAction = buyAction;
-
-            nameText.text = $"{data.Category} Lv {data.Tier}";
+            
+            nameText.text = $"{data.Description}";
+            tierText.text = $"Tier {data.Tier}";
             costText.text = $"${data.Cost}";
 
             buyButton.onClick.RemoveAllListeners();
@@ -34,6 +37,7 @@ namespace Route24.GameOff
         {
             var shop = ServiceLocator.Get<UpgradeShopController>();
 
+            // --- PURCHASED ---
             if (shop.IsPurchased(_data.Id))
             {
                 buyButton.gameObject.SetActive(false);
@@ -42,11 +46,12 @@ namespace Route24.GameOff
                 return;
             }
 
-            // Check tier lock
+            // --- LOCKED (must own previous tier of same upgrade line) ---
             if (_data.Tier > 1)
             {
-                string prereq = $"{_data.Category}_Level{_data.Tier - 1}";
-                if (!shop.IsPurchased(prereq))
+                string requiredId = $"{_data.BaseId}_T{_data.Tier - 1}";
+
+                if (!shop.IsPurchased(requiredId))
                 {
                     buyButton.gameObject.SetActive(false);
                     ownedBadge.SetActive(false);
@@ -55,7 +60,7 @@ namespace Route24.GameOff
                 }
             }
 
-            // Available for purchase
+            // --- AVAILABLE ---
             buyButton.gameObject.SetActive(true);
             ownedBadge.SetActive(false);
             lockedBadge.SetActive(false);

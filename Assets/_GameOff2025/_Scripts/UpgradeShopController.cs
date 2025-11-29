@@ -6,86 +6,173 @@ namespace Route24.GameOff
 {
     public class UpgradeShopController : MonoBehaviour, IService, IInitializable
     {
+        public static UpgradeShopController Instance { get; private set; }
+
         public int InitializationPriority => 20;
 
-        private Dictionary<string, UpgradeData> _upgrades = new();
+        /// <summary>
+        /// Dictionary for quick lookup by ID.
+        /// </summary>
+        private Dictionary<string, UpgradeData> _upgradeLookup = new();
+
+        /// <summary>
+        /// Preserves the exact order upgrades are added.
+        /// </summary>
+        private List<UpgradeData> _upgradeList = new();
+
+        public IReadOnlyList<UpgradeData> AllUpgradesOrdered => _upgradeList;
 
         public void Initialize()
         {
+            Instance = this;
             LoadAllUpgrades();
         }
 
+        // --------------------------------------------------------------------------------------
+        // UPGRADE CREATION LOGIC
+        // --------------------------------------------------------------------------------------
+
         private void LoadAllUpgrades()
         {
-            // Example setup — replace with your real data
-            AddUpgrade("Keypad_Level1", "Keypad", 1, cost: 15, description: "Automatically decodes a scrambled code after 10 seconds.");
-            AddUpgrade("Keypad_Level2", "Keypad", 2, cost: 30, description: "All codes are automatically decoded by default.");
+            // Keypad
+            AddUpgrade("Keypad", "Keypad", 1, 15, "Automatically decodes a scrambled code after 10 seconds.");
+            AddUpgrade("Keypad", "Keypad", 2, 30, "All codes are automatically decoded by default.");
 
-            AddUpgrade("Osc_MatchTime_Level1", "Oscillator", 1, cost: 10, description: "Reduces signal match time by 1.5 seconds.");
-            AddUpgrade("Osc_MatchTime_Level2", "Oscillator", 2, cost: 15, description: "Reduces signal match time by 3 seconds.");
-            AddUpgrade("Osc_MatchPerc_Level1", "Oscillator", 1, cost: 10, description: "Reduce match percentage needed by 10%.");
-            AddUpgrade("Osc_MatchPerc_Level2", "Oscillator", 2, cost: 15, description: "Reduce match percentage needed by 20%.");
-            AddUpgrade("Osc_Random_Level1", "Oscillator", 1, cost: 30, description: "Removes any random interference signals.");
+            // Oscillator – multiple upgrade lines inside same category
+            AddUpgrade("Osc_MatchTime", "Oscillator", 1, 10, "Reduces signal match time by 1.5 seconds.");
+            AddUpgrade("Osc_MatchTime", "Oscillator", 2, 15, "Reduces signal match time by 3 seconds.");
 
-            AddUpgrade("Cargo_Scan1", "Cargo", 1, cost: 10, description: "Reduce scan time by 1 second.");
-            AddUpgrade("Cargo_Scan2", "Cargo", 2, cost: 15, description: "Reduce scan time by 2 seconds.");
-            AddUpgrade("Cargo_AutoScan", "Cargo", 1, cost: 30, description: "Automatically scans all items one by one on inspection start.");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 1, 10, "Reduce match percentage needed by 10%.");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 2, 15, "Reduce match percentage needed by 20%.");
+
+            AddUpgrade("Osc_Random", "Oscillator", 1, 30, "Removes any random interference signals.");
+
+            // Cargo
+            AddUpgrade("Cargo", "Cargo", 1, 10, "Reduce scan time by 1 second.");
+            AddUpgrade("Cargo", "Cargo", 2, 15, "Reduce scan time by 2 seconds.");
+
+            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 30, "Automatically scans all items on inspection start.");
         }
 
-        private void AddUpgrade(string id, string category, int tier, int cost, string description)
+        /// <summary>
+        /// Adds a new upgrade with auto-generated tiered ID.
+        /// baseId: Osc_MatchTime
+        /// tier: 2
+        /// final ID: Osc_MatchTime_T2
+        /// </summary>
+        private void AddUpgrade(string baseId, string category, int tier, int cost, string description)
         {
-            _upgrades[id] = new UpgradeData(id, category, tier, cost, description);
+            string finalId = $"{baseId}_T{tier}";
+
+            var upgrade = new UpgradeData(
+                id: finalId,
+                baseId: baseId,
+                category: category,
+                tier: tier,
+                cost: cost,
+                description: description
+            );
+
+            _upgradeLookup[finalId] = upgrade;
+            _upgradeList.Add(upgrade);
         }
 
-        public IReadOnlyDictionary<string, UpgradeData> Upgrades => _upgrades;
+        // --------------------------------------------------------------------------------------
+        // UPGRADE PURCHASE LOGIC
+        // --------------------------------------------------------------------------------------
 
-        public bool IsPurchased(string id)
+        public bool TryPurchase(string upgradeId)
         {
-            return _upgrades[id].Purchased;
-        }
+            if (!_upgradeLookup.TryGetValue(upgradeId, out var upgrade))
+                return false;
 
-        public bool TryPurchase(string id)
-        {
-            if (!_upgrades.ContainsKey(id)) return false;
+            if (upgrade.Purchased)
+                return false;
 
-            UpgradeData upgrade = _upgrades[id];
-
-            // Must not already be purchased
-            if (upgrade.Purchased) return false;
-
-            // Must own previous tier
+            // Must own previous tier if tier > 1
             if (upgrade.Tier > 1)
             {
-                string required = $"{upgrade.Category}_Level{upgrade.Tier - 1}";
-                if (!_upgrades.ContainsKey(required) || !_upgrades[required].Purchased)
+                string requiredId = $"{upgrade.BaseId}_T{upgrade.Tier - 1}";
+
+                if (!_upgradeLookup.TryGetValue(requiredId, out var prevTier) ||
+                    !prevTier.Purchased)
+                {
                     return false;
+                }
             }
 
-            // Must have enough money
+            // Check currency
             var currency = ServiceLocator.Get<CurrencyManager>();
+
             if (!currency.HasEnoughCurrency(upgrade.Cost))
                 return false;
 
             currency.RemoveCurrency(upgrade.Cost, $"Purchased {upgrade.Id}");
+
+            // Apply purchase
             upgrade.Purchased = true;
-            _upgrades[upgrade.Id] = upgrade;
+            _upgradeLookup[upgradeId] = upgrade;
+            SyncOrderedList(upgrade);
 
             return true;
         }
+
+        /// <summary>
+        /// Replaces the modified upgrade inside the ordered list.
+        /// </summary>
+        private void SyncOrderedList(UpgradeData updated)
+        {
+            for (int i = 0; i < _upgradeList.Count; i++)
+            {
+                if (_upgradeList[i].Id == updated.Id)
+                {
+                    _upgradeList[i] = updated;
+                    return;
+                }
+            }
+        }
+
+        // --------------------------------------------------------------------------------------
+        // LOCKED STATE CHECK
+        // --------------------------------------------------------------------------------------
+
+        public bool IsLocked(UpgradeData upgrade)
+        {
+            if (upgrade.Tier == 1) return false;
+
+            string requiredId = $"{upgrade.BaseId}_T{upgrade.Tier - 1}";
+
+            if (!_upgradeLookup.TryGetValue(requiredId, out var prevTier))
+                return true;
+
+            return !prevTier.Purchased;
+        }
+
+        public bool IsPurchased(string id)
+        {
+            return _upgradeLookup[id].Purchased;
+        }
     }
 
+    // ==========================================================================================
+    // UPGRADE DATA STRUCT
+    // ==========================================================================================
+
+    [System.Serializable]
     public struct UpgradeData
     {
-        public string Id;
-        public string Category;
-        public int Tier;
+        public string Id;          // Osc_MatchTime_T2
+        public string BaseId;      // Osc_MatchTime
+        public string Category;    // Oscillator
+        public int Tier;           // 2
         public int Cost;
         public bool Purchased;
         public string Description;
 
-        public UpgradeData(string id, string category, int tier, int cost, string description)
+        public UpgradeData(string id, string baseId, string category, int tier, int cost, string description)
         {
             Id = id;
+            BaseId = baseId;
             Category = category;
             Tier = tier;
             Cost = cost;
