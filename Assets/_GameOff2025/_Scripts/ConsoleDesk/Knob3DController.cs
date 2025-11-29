@@ -9,7 +9,6 @@ namespace Route24.GameOff
         [SerializeField] private Transform _knobMesh;
         [SerializeField] private float _minValue = 0.05f;
         [SerializeField] private float _maxValue = 1f;
-        [SerializeField] private string _label = "Knob";
         [SerializeField] private float _currentValue = 0.5f;
 
         // set below 3 values according to fbx model

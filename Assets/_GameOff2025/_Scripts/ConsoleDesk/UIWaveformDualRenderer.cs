@@ -49,7 +49,6 @@ namespace Route24.GameOff
         // ─────────────────────────────────────────────
         [Tooltip("0 = fully degraded, 100 = perfect signal")]
         [SerializeField, Range(0f, 100f)] private float _signalIntegrity = 100f;
-        [SerializeField] private float _noiseRefreshRate = 0.15f;
 
         // ─────────────────────────────────────────────
         // Behavior Variations (Ship Only)
@@ -109,7 +108,6 @@ namespace Route24.GameOff
         private bool _isLocked;
         private bool _canMatch = true;
         private bool _signalsStopped = false;
-        private bool _isBooting = false;
         
         private bool _tutorialMode = false;
         private float _tutorialShipAmp, _tutorialShipFreq, _tutorialShipOffset;
@@ -182,7 +180,6 @@ namespace Route24.GameOff
 
         public void StartBootSequence()
         {
-            _isBooting = true;
             _bootPanel.alpha = 1f;
             _bootLoaderFill.fillAmount = 0f;
             StartCoroutine(BootSequence());
@@ -211,13 +208,8 @@ namespace Route24.GameOff
 
             _bootPanel.alpha = 0f;
             
-            // if (_waveCanvas)
-            //     _waveCanvas.alpha = 1f;
-            
             if (_waveInfoPanel)
                 _waveInfoPanel.alpha = 1f;
-
-            _isBooting = false;
             
             ParentController.EndBootSequence();
         }

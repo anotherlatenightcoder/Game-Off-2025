@@ -29,15 +29,15 @@ namespace Route24.GameOff
 
         private void HandleDay1Upgrade()
         {
-            Transaction transaction = Transactions.Day1Upgrade();
-           
-            TransactionOption transactionOption = new TransactionOption(transaction, true, false, () =>
-            {
-                print("remove signal game");
-                _currencyManager.RemovePossibleExpense(transaction);
-            });
-            
-            _currencyManager.AddPossibleExpense(transactionOption);
+            // Transaction transaction = Transactions.Day1Upgrade();
+            //
+            // TransactionOption transactionOption = new TransactionOption(transaction, true, false, () =>
+            // {
+            //     print("remove signal game");
+            //     _currencyManager.RemovePossibleExpense(transaction);
+            // });
+            //
+            // _currencyManager.AddPossibleExpense(transactionOption);
         }
     }
 }

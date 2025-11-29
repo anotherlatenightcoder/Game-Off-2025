@@ -52,19 +52,6 @@ namespace Route24.GameOff
 
         private void Update()
         {
-            HandleDebugInput();
-        }
-
-        private void HandleDebugInput()
-        {
-            if (inspectionActive)
-            {
-                if (Input.GetKeyDown(KeyCode.Alpha1))
-                    CompleteInspection(true);
-
-                if (Input.GetKeyDown(KeyCode.Alpha2))
-                    CompleteInspection(false);
-            }
         }
         
         public void StartNewDay()
@@ -139,6 +126,8 @@ namespace Route24.GameOff
         {
             state = GameplayState.DayComplete; 
             StopCoroutine(WaitThenNextShip());
+            StopCoroutine(DayTimeCoroutine());
+            
             Debug.Log($"=== End of Day {currentDay} ===");
             
             _eventHub?.Publish(new DayEndedEvent(currentDay));

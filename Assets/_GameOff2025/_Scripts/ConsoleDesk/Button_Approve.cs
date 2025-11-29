@@ -189,7 +189,7 @@ namespace Route24.GameOff
         
         private IEnumerator AnimateGlassRoutine(Quaternion targetRotation)
         {
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(.2f);
             
             Quaternion startRot = _glassCover.localRotation;
             float t = 0f;
