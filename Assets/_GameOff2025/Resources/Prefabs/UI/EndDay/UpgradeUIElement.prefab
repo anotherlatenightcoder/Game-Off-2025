@@ -448,10 +448,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99698f8eab4b028478583a8a8dc1fb3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.UpgradeUIElement
+  entryBG: {fileID: 4721626823530364003}
+  normalColor: {r: 0, g: 0, b: 0, a: 0}
+  highlightedColor: {r: 0, g: 1, b: 0.005109787, a: 0.5019608}
+  disabledColor: {r: 1, g: 0.5613208, b: 0.5613208, a: 0.5019608}
   nameText: {fileID: 4993737058089243666}
   tierText: {fileID: 5632500552867534735}
   costText: {fileID: 4017063558911075324}
-  buyButton: {fileID: 5509166131811602632}
   ownedBadge: {fileID: 138247561602665550}
   lockedBadge: {fileID: 8486673791781014630}
 --- !u!1 &3746782882732352402

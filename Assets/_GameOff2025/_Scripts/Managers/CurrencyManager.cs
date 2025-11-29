@@ -26,6 +26,7 @@ namespace Route24.GameOff
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionCompleted);
+            CurrencyAmount = 5;
         }
 
         private void OnDestroy()

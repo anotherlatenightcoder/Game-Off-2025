@@ -35,23 +35,23 @@ namespace Route24.GameOff
         private void LoadAllUpgrades()
         {
             // Keypad
-            AddUpgrade("Keypad", "Keypad", 1, 15, "Automatically decodes a scrambled code after 10 seconds.");
-            AddUpgrade("Keypad", "Keypad", 2, 30, "All codes are automatically decoded by default.");
+            AddUpgrade("Keypad", "Keypad", 1, 15, "Automatically decodes a scrambled code after 10 seconds.", "Keypad 10s decode");
+            AddUpgrade("Keypad", "Keypad", 2, 30, "All codes are automatically decoded by default.", "Keypad Instant decode");
 
             // Oscillator – multiple upgrade lines inside same category
-            AddUpgrade("Osc_MatchTime", "Oscillator", 1, 10, "Reduces signal match time by 1.5 seconds.");
-            AddUpgrade("Osc_MatchTime", "Oscillator", 2, 15, "Reduces signal match time by 3 seconds.");
+            AddUpgrade("Osc_MatchTime", "Oscillator", 1, 10, "Reduces signal match time by 1.5 seconds.", "Reduced signal match 1.5s");
+            AddUpgrade("Osc_MatchTime", "Oscillator", 2, 15, "Reduces signal match time by 3 seconds.", "Reduced signal match 3.0s");
 
-            AddUpgrade("Osc_MatchPerc", "Oscillator", 1, 10, "Reduce match percentage needed by 10%.");
-            AddUpgrade("Osc_MatchPerc", "Oscillator", 2, 15, "Reduce match percentage needed by 20%.");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 1, 10, "Reduce match percentage needed by 10%.", "Reduced matched percentage 10%");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 2, 15, "Reduce match percentage needed by 20%.", "Reduced matched percentage 20%");
 
-            AddUpgrade("Osc_Random", "Oscillator", 1, 30, "Removes any random interference signals.");
+            AddUpgrade("Osc_Random", "Oscillator", 1, 30, "Removes any random interference signals.", "Disable random interference");
 
             // Cargo
-            AddUpgrade("Cargo", "Cargo", 1, 10, "Reduce scan time by 1 second.");
-            AddUpgrade("Cargo", "Cargo", 2, 15, "Reduce scan time by 2 seconds.");
+            AddUpgrade("Cargo", "Cargo", 1, 10, "Reduce scan time by 1 second.", "Reduced scan time by 1s");
+            AddUpgrade("Cargo", "Cargo", 2, 15, "Reduce scan time by 2 seconds.", "Reduced scan time by 2s");
 
-            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 30, "Automatically scans all items on inspection start.");
+            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 30, "Automatically scans all items on inspection start.", "Cargo auto scan");
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Route24.GameOff
         /// tier: 2
         /// final ID: Osc_MatchTime_T2
         /// </summary>
-        private void AddUpgrade(string baseId, string category, int tier, int cost, string description)
+        private void AddUpgrade(string baseId, string category, int tier, int cost, string description, string expenseName = "")
         {
             string finalId = $"{baseId}_T{tier}";
 
@@ -70,7 +70,8 @@ namespace Route24.GameOff
                 category: category,
                 tier: tier,
                 cost: cost,
-                description: description
+                description: description,
+                expenseName: expenseName
             );
 
             _upgradeLookup[finalId] = upgrade;
@@ -107,7 +108,7 @@ namespace Route24.GameOff
             if (!currency.HasEnoughCurrency(upgrade.Cost))
                 return false;
 
-            currency.RemoveCurrency(upgrade.Cost, $"Purchased {upgrade.Id}");
+            currency.RemoveCurrency(upgrade.Cost, $"{upgrade.ExpenseName}");
 
             // Apply purchase
             upgrade.Purchased = true;
@@ -164,12 +165,13 @@ namespace Route24.GameOff
         public string Id;          // Osc_MatchTime_T2
         public string BaseId;      // Osc_MatchTime
         public string Category;    // Oscillator
+        public string ExpenseName;
         public int Tier;           // 2
         public int Cost;
         public bool Purchased;
         public string Description;
 
-        public UpgradeData(string id, string baseId, string category, int tier, int cost, string description)
+        public UpgradeData(string id, string baseId, string category, int tier, int cost, string description, string expenseName = "")
         {
             Id = id;
             BaseId = baseId;
@@ -178,6 +180,7 @@ namespace Route24.GameOff
             Cost = cost;
             Purchased = false;
             Description = description;
+            ExpenseName = expenseName;
         }
     }
 }
