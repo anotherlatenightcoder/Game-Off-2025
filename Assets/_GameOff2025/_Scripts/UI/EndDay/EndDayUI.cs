@@ -44,9 +44,12 @@ namespace Route24.GameOff
             _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
         }
 
-        public void Hello()
+        void Update()
         {
-            Debug.Log("Hello run!");
+            if (_dayCanvas != null && _dayCanvas.interactable && Input.GetKeyDown(KeyCode.Space))
+            {
+                OpenUpgradeShop();
+            }
         }
 
         private void OnDestroy()
@@ -70,8 +73,6 @@ namespace Route24.GameOff
         
         public void OpenUpgradeShop()
         {
-            Debug.Log("[EndDayUI] OpenUpgradeShop() CALLED on instance: " + GetInstanceID());
-            
             _dayCanvas.alpha = 0;
             _dayCanvas.interactable = false;
             _dayCanvas.blocksRaycasts = false;
