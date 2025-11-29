@@ -25,6 +25,8 @@ public class AudioManager : MonoBehaviour
     private const int SFX_SOURCE_COUNT = 5;
 
     private Dictionary<string, AudioClip> _lookup;
+    
+    private string _exclusiveKey = "KNOB_TURNING";
 
     private void Awake()
     {
@@ -122,7 +124,22 @@ public class AudioManager : MonoBehaviour
             Debug.LogWarning("SFX clip missing for key: " + key);
             return;
         }
-        
+    
+        // Lets only allow one knob turn to play
+        // No idea how long the clip
+        if (key == _exclusiveKey)
+        {
+            for (int i = 0; i < sfxSources.Length; i++)
+            {
+                if (sfxSources[i].isPlaying && sfxSources[i].clip == clip)
+                {
+                    // It's already playing so we ignore this request
+                    return;
+                }
+            }
+        }
+
+        // all the other shit we need to play
         for (int i = 0; i < sfxSources.Length; i++)
         {
             if (!sfxSources[i].isPlaying)
@@ -133,7 +150,8 @@ public class AudioManager : MonoBehaviour
                 return;
             }
         }
-        
+
+        // !important
         sfxSources[0].clip = clip;
         sfxSources[0].volume = volume;
         sfxSources[0].Play();

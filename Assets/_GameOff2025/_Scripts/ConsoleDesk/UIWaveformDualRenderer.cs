@@ -413,6 +413,8 @@ namespace Route24.GameOff
                     _waveInfoPanel.alpha = 0f;
                     _signalsStopped = true;
                     
+                    AudioManager.Instance.PlaySFX("SCANNER_MATCH");
+                    
                     ParentController.ExitFromTutorialSuccess();
 
                     ServiceLocator.Get<EventHub>()?.Publish(new Tutorial_ScopeCalibrationCompleteEvent());

@@ -57,6 +57,8 @@ namespace Route24.GameOff
             
             Debug.Log($"=== Starting Day {currentDay} ===");
             
+            AudioManager.Instance.PlaySFX("DAY_START");
+            
             _eventHub?.Publish(new DayStartedEvent(currentDay));
             _shipManager.StartNewDay(currentDay);
 

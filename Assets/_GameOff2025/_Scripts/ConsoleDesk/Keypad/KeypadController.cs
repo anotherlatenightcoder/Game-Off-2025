@@ -88,12 +88,14 @@ namespace Route24.GameOff
                 CodeEntered = true;
                 _eventHub.Publish(new InspectionKeypadCodeMatchedEvent());
                 _lights.FlashGreenStrong();
+                AudioManager.Instance.PlaySFX("KEYPAD_SUCCESS");
             }
             else
             {
                 Debug.Log("[KEYPAD] WRONG CODE");
                 _lights.FlashRed();
                 _keypadUI.ResetDisplay();
+                AudioManager.Instance.PlaySFX("KEYPAD_FAILURE");
             }
 
             ResetCode();
@@ -115,11 +117,13 @@ namespace Route24.GameOff
                 Debug.Log("[KEYPAD] Tutorial code accepted");
                 _eventHub.Publish(new Tutorial_KeypadTestEnteredEvent());
                 _lights.FlashGreenStrong();
+                AudioManager.Instance.PlaySFX("KEYPAD_SUCCESS");
             }
             else
             {
                 Debug.Log("[KEYPAD] Tutorial wrong code");
                 _lights.FlashRed();
+                AudioManager.Instance.PlaySFX("KEYPAD_FAILURE");
             }
 
             ResetCode();

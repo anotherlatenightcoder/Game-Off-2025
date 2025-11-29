@@ -10,6 +10,8 @@ namespace Route24.GameOff
         [SerializeField] private float _minValue = 0.05f;
         [SerializeField] private float _maxValue = 1f;
         [SerializeField] private float _currentValue = 0.5f;
+        [SerializeField] private float knobSFXCooldown = 0.5f;
+        private float _knobSFXTimer = 0f;
 
         // set below 3 values according to fbx model
         private float _minAngle = -80f;
@@ -27,6 +29,12 @@ namespace Route24.GameOff
         private void Start()
         {
             UpdateRotationView();
+        }
+
+        private void Update()
+        {
+            if (_knobSFXTimer > 0f)
+                _knobSFXTimer -= Time.deltaTime;
         }
 
         public void InitializeLink(OscilloscopeController parent)
@@ -66,6 +74,13 @@ namespace Route24.GameOff
             _lastMousePos = Input.mousePosition;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Confined; // this should not be here
+            
+            // We will only play the knob sound every X seconds (ideally this should be like .01 higher than the clip length)
+            if (_knobSFXTimer <= 0f)
+            {
+                AudioManager.Instance.PlaySFX("KNOB_TURNING");
+                _knobSFXTimer = knobSFXCooldown;
+            }
         }
         
         private float ValueToAngle(float value)

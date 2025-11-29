@@ -28,6 +28,7 @@ namespace Route24.GameOff
 
         [Header("Settings")]
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
+        [SerializeField] private AudioSource _audioSource;
 
         public bool IsFocused => _inFocus;
         public bool IsTutorialBooting => _isBooting;
@@ -146,6 +147,8 @@ namespace Route24.GameOff
                     _eventHub?.Publish(new Tutorial_ScopeFocusEvent());
                 }
                 
+                _audioSource.Play();
+                
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
@@ -155,6 +158,8 @@ namespace Route24.GameOff
                 _cameraController.ReturnToDefault();
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                
+                _audioSource.Stop();
 
                 StartCoroutine(FocusCooldownRoutine());
             }
@@ -243,7 +248,9 @@ namespace Route24.GameOff
 
         public void WaveMatched()
         {
+            _audioSource.Stop();
             _isWaveMatched = true;
+            AudioManager.Instance.PlaySFX("SCANNER_MATCH");
             _eventHub?.Publish(new WaveMatchedEvent());
         }
     }

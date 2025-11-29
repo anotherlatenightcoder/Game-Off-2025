@@ -190,6 +190,7 @@ namespace Route24.GameOff
         private IEnumerator AnimateGlassRoutine(Quaternion targetRotation)
         {
             yield return new WaitForSeconds(.2f);
+            AudioManager.Instance.PlaySFX("BUTTON_COVER_OPEN");
             
             Quaternion startRot = _glassCover.localRotation;
             float t = 0f;
