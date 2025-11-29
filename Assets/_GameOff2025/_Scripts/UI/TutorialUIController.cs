@@ -51,7 +51,7 @@ namespace Route24.GameOff
         
         public void ShowStep(int index)
         {
-            if (TutorialController.Instance.IsStepCompleted(TutorialStep.LightsPoweredOn))
+            if (TutorialController.Instance.IsStepCompleted(TutorialStep.DockGatesOpened))
                 return;
             
             if (index < 0 || index >= _steps.Length) return;

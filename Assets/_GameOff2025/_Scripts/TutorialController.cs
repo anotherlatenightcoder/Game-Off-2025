@@ -69,10 +69,10 @@ namespace Route24.GameOff
             _tutorialUI.ShowStep((int)step);
             _tutorialUI.StrikeStep((int)step-1);
 
-            if (step == TutorialStep.DockGatesOpened)
-            {
-                _tutorialUI.ClearAll();
-            }
+            // if (step == TutorialStep.DockGatesOpened)
+            // {
+            //     _tutorialUI.ClearAll();
+            // }
         }
 
         private void OnInspectionStarted(Tutorial_OnInspectionStartedEvent obj)
