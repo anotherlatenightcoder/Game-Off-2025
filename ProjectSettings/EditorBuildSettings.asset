@@ -5,18 +5,21 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/_GameOff2025/Scenes/_Persistent.unity
     guid: 2d35c7df225d5204da0d20cc8a01dfe8
-  - enabled: 1
+  - enabled: 0
     path: Assets/_GameOff2025/Scenes/MainMenu.unity
     guid: d041284e9a241e04e958a3204451d29e
-  - enabled: 1
+  - enabled: 0
     path: Assets/_GameOff2025/Scenes/Sandbox.unity
     guid: 598d289e8f40bf845aa0a6f55e51e379
-  - enabled: 1
+  - enabled: 0
     path: Assets/_GameOff2025/Scenes/EnedProto.unity
     guid: b36103ac47c3899429a325414b543609
+  - enabled: 1
+    path: Assets/_GameOff2025/Scenes/Game.unity
+    guid: 2a9d9777d25fbaf4a883c54e5907c25b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
