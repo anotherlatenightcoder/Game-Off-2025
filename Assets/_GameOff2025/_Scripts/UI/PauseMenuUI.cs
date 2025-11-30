@@ -46,8 +46,15 @@ namespace Route24.GameOff
             
             _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             _musicSlider.SetValueWithoutNotify(AudioManager.Instance.musicVolume);
+            _sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
 
             Hide();
+        }
+
+        private void OnSensitivityChanged(float value)
+        {
+            if (SeatedCameraController.Instance != null)
+                SeatedCameraController.Instance.SetMouseSensitivityFromSlider(value);
         }
 
         private void OnPauseChanged(GamePausedEvent e)
@@ -65,6 +72,14 @@ namespace Route24.GameOff
             
             if (AudioManager.Instance != null)
                 _musicSlider.SetValueWithoutNotify(AudioManager.Instance.musicVolume);
+            
+            if (SeatedCameraController.Instance != null)
+            {
+                float sliderVal = SeatedCameraController.Instance
+                    .SensitivityToSlider(SeatedCameraController.Instance.GetMouseSensitivity());
+    
+                _sensitivitySlider.SetValueWithoutNotify(sliderVal);
+            }
 
             _canvasGroup.alpha = 1f;
             _canvasGroup.blocksRaycasts = true;
