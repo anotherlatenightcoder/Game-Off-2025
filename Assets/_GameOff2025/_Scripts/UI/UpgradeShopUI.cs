@@ -95,7 +95,7 @@ namespace Route24.GameOff
                 _spaceHoldTimer += Time.deltaTime;
                 if (_spaceHoldTimer >= SpaceHoldDuration)
                 {
-                    ServiceLocator.Get<GameManager>().StartNewDay();
+                    ServiceLocator.Get<GameManager>().StartNextDay();
                     _spaceHoldTimer = 0f;
                     Hide();
                 }

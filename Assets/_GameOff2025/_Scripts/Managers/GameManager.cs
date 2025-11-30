@@ -38,15 +38,18 @@ namespace Route24.GameOff
         {
             StartCoroutine(StartTutorialRoutine());
         }
+
+        public void StartNextDay()
+        {
+            StartCoroutine(DelayedStartOfDay());
+        }
         
         private IEnumerator DelayedStartOfDay()
         {
-            Debug.Log("[GameManager] Preparing environment...");
             yield return new WaitForSeconds(ConstGameStats.DelayBeforeDayStart);
             
             state = GameplayState.WaitingForShip;
-
-            Debug.Log("[GameManager] Starting first day...");
+            
             StartNewDay();
         }
         
