@@ -84,9 +84,6 @@ namespace Route24.GameOff
         {
             inspectionActive = true;
             state = GameplayState.Inspecting;
-            
-            Debug.Log("Inspection started. (Press 1 to Approve, 2 to Decline)");
-            
             _eventHub?.Publish(new InspectionStartedEvent(_shipManager.GetCurrentShipProfile()));
         }
 

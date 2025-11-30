@@ -26,11 +26,33 @@ namespace Route24.GameOff
         {
             Instance = this;
             LoadAllUpgrades();
+            TestSomeUpgrades();
         }
 
         // --------------------------------------------------------------------------------------
         // UPGRADE CREATION LOGIC
         // --------------------------------------------------------------------------------------
+
+        private void TestSomeUpgrades()
+        {
+            // ForceUnlock("Cargo_AutoScan_T2");
+            // ForceUnlock("Cargo_T2");
+            // ForceUnlock("Keypad_T2");
+        }
+        private void ForceUnlock(string upgradeId)
+        {
+            if (!_upgradeLookup.TryGetValue(upgradeId, out var upgrade))
+            {
+                Debug.LogWarning($"Upgrade '{upgradeId}' not found.");
+                return;
+            }
+
+            upgrade.Purchased = true;
+            _upgradeLookup[upgradeId] = upgrade;
+            SyncOrderedList(upgrade);
+
+            Debug.Log($"[DEV] Forced unlocked upgrade: {upgradeId}");
+        }
 
         private void LoadAllUpgrades()
         {
@@ -51,7 +73,8 @@ namespace Route24.GameOff
             AddUpgrade("Cargo", "Cargo", 1, 10, "Reduce scan time by 1 second.", "Reduced scan time by 1s");
             AddUpgrade("Cargo", "Cargo", 2, 15, "Reduce scan time by 2 seconds.", "Reduced scan time by 2s");
 
-            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 30, "Automatically scans all items on inspection start.", "Cargo auto scan");
+            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 15, "Automatically scans items one for one.", "Cargo auto scan");
+            AddUpgrade("Cargo_AutoScan", "Cargo", 2, 10, "Automatically scans all items together.", "Cargo async scan");
         }
 
         /// <summary>

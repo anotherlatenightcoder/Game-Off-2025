@@ -10206,7 +10206,7 @@ MonoBehaviour:
   _shipNameText: {fileID: 1556288257}
   _shipCodeText: {fileID: 2070103757}
   _canvasGroup: {fileID: 168825885}
-  _scanRevealDelay: 1
+  _scanRevealDelay: 3
   _defaultColor: {r: 0.25882354, g: 0.5294118, b: 0.19607843, a: 0.21568628}
   _safeColor: {r: 0, g: 1, b: 0, a: 1}
   _bannedColor: {r: 1, g: 0, b: 0, a: 1}
@@ -18017,6 +18017,7 @@ GameObject:
   - component: {fileID: 1488123040}
   - component: {fileID: 1488123042}
   - component: {fileID: 1488123041}
+  - component: {fileID: 1488123043}
   m_Layer: 5
   m_Name: UpgradesContainer
   m_TagString: Untagged
@@ -18081,6 +18082,32 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1488123039}
   m_CullTransparentMesh: 1
+--- !u!114 &1488123043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488123039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.VerticalLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 1
+  m_Spacing: 0
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
 --- !u!1001 &1491290004
 PrefabInstance:
   m_ObjectHideFlags: 0
