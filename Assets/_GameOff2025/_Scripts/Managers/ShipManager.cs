@@ -167,6 +167,11 @@ namespace Route24.GameOff
 
         private GameObject GetRandomShipPrefab()
         {
+            float roll = Random.value;
+
+            if (roll < 0.3f)
+                return Resources.Load<GameObject>("Prefabs/Ship/ShipModel2");
+
             return Resources.Load<GameObject>("Prefabs/Ship/ShipModel");
         }
 

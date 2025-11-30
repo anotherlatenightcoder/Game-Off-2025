@@ -50,7 +50,7 @@ namespace Route24.GameOff
         {
             StopBobbing();
             StopAllCoroutines();
-            StartCoroutine(MoveRoutine(_exitPoint.position, _moveDuration, OnExited));
+            StartCoroutine(ExitFlowRoutine());
             
             AudioManager.Instance.PlaySFX("SHIP_APPROVED");
         }
@@ -89,17 +89,43 @@ namespace Route24.GameOff
             transform.position = target;
             onComplete?.Invoke();
         }
+        
+        private IEnumerator RotateRoutine(float angleY, float duration)
+        {
+            Quaternion startRot = transform.rotation;
+            Quaternion endRot = startRot * Quaternion.Euler(0f, angleY, 0f);
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+                yield return null;
+            }
+
+            transform.rotation = endRot;
+            
+            if (_enableBobbing)
+            {
+                _bobRoutine = StartCoroutine(BobbingRoutine());
+            }
+        }
+        
+        private IEnumerator ExitFlowRoutine()
+        {
+            yield return RotateRoutine(-45f, 1f);
+            yield return MoveRoutine(_exitPoint.position, _moveDuration, OnExited);
+        }
+
 
         private void OnArrivedAtDock()
         {
             Debug.Log("[ShipController] Arrived at dock, ready for inspection.");
             _shipManager.OnShipReadyForInspection(this);
             
-            if (_enableBobbing)
-            {
-                StopBobbing();
-                _bobRoutine = StartCoroutine(BobbingRoutine());
-            }
+            StopBobbing();
+            StartCoroutine(RotateRoutine(45f, 1f));
             
             AudioManager.Instance.PlaySFX("SHIP_ARRIVED");
         }
