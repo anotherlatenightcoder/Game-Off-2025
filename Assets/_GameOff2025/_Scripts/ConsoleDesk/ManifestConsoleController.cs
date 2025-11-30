@@ -178,6 +178,8 @@ namespace Route24.GameOff
         {
             string shipCode = _currentShip.EntryCode;
             
+            // ##HERE
+            
             // 50% chance to mask ONE character
             // We should add this percentage to our ship configs? idk
             if (mask && Random.value < 0.3f)

@@ -10,14 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6763c705de1b4f30ba027199aefc63d2, type: 3}
-  m_Name: SO_Day1_Config
+  m_Name: Day_3_ShipList
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipsOfDay
   ShipProfiles:
-  - {fileID: 11400000, guid: 1401f97c62ca4b74fa2aad733882b5f5, type: 2}
-  - {fileID: 11400000, guid: 2085ec1fea8b93e4e87633100e9f5cca, type: 2}
-  - {fileID: 11400000, guid: 505d35518ea86614eb41d652747c383a, type: 2}
-  MinCargoCount: 3
-  MaxCargoCount: 5
-  ValidPercentage: 8
-  TimedShipRatio: 4
-  C: 3
+  - {fileID: 11400000, guid: b7782c14262228f40a87035bf37b69c5, type: 2}

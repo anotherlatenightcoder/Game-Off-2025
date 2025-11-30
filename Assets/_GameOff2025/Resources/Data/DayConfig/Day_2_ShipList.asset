@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6763c705de1b4f30ba027199aefc63d2, type: 3}
-  m_Name: SO_Day2_Config
+  m_Name: Day_2_ShipList
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipsOfDay
   ShipProfiles:
   - {fileID: 11400000, guid: 2bb92228c9a05f946ab01544b4ddc5e9, type: 2}

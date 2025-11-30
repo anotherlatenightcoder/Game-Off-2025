@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b19544ea62bc4988b9acf78707d609cf, type: 3}
-  m_Name: So_Day2_Ship1
+  m_Name: Day01_Ship001
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipProfileSO
   Profile:
-    ShipName: Pillar of Autumn
+    ShipName: Black Pearl
     CargoList:
     - {fileID: 11400000, guid: be73c25dd0ec9cb4faca92a21900b0b4, type: 2}
     - {fileID: 11400000, guid: 4402a3389ca48d04f848d4fd522e1207, type: 2}

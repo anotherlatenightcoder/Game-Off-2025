@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b19544ea62bc4988b9acf78707d609cf, type: 3}
-  m_Name: So_Day2_Ship2
+  m_Name: Day02_Ship002
   m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipProfileSO
   Profile:
     ShipName: Usain Boat
