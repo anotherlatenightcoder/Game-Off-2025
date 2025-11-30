@@ -99,6 +99,7 @@ namespace Route24.GameOff
             }
 
             entryBG.color = active ? highlightedColor : normalColor;
+            AudioManager.Instance.PlaySFX("CARGO_SELECTION");
         }
     }
 }

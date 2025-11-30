@@ -29,9 +29,6 @@ namespace Route24.GameOff
         [SerializeField] private Color _bannedColor = Color.red;
         [SerializeField] private Color _scanColor = Color.cyan;
         
-        [Header("Switches")]
-        [SerializeField] private LeverSwitchController _consoleLeverSwitch;
-        
         [Header("Camera Settings")]
         [SerializeField] private SeatedCameraController _cameraController;
         [SerializeField] private Transform _cameraFocusPoint;
@@ -58,9 +55,6 @@ namespace Route24.GameOff
             _eventHub = ServiceLocator.Get<EventHub>();
             _manifestManager = ServiceLocator.Get<CargoManifestManager>();
             _gameManager = ServiceLocator.Get<GameManager>();
-
-            // _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
-            // _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
             
             _eventHub.Subscribe<Tutorial_OnInspectionStartedEvent>(OnTutorialStartInspection);
             _eventHub.Subscribe<TutorialCompletedEvent>(OnStartup);
@@ -115,21 +109,6 @@ namespace Route24.GameOff
         {
             _currentShip = null;
             
-            ClearShipList();
-            
-            _consoleLeverSwitch?.ForceOff();
-        }
-        
-        private void OnLeverOn(LeverActivatedEvent evt)
-        {
-            Debug.Log("[ManifestConsole] Lever turned ON — loading ship cargo.");
-            if (_currentShip != null)
-                PopulateShipList(_currentShip.CargoList);
-        }
-
-        private void OnLeverOff(LeverDeactivatedEvent evt)
-        {
-            Debug.Log("[ManifestConsole] Lever turned OFF — clearing manifest.");
             ClearShipList();
         }
 
@@ -270,6 +249,8 @@ namespace Route24.GameOff
             
             if (_highlightBar && _currentIndex < _shipEntries.Count)
                 _highlightBar.position = _shipEntries[_currentIndex].transform.position;
+            
+            AudioManager.Instance.PlaySFX("CARGO_SELECTION");
         }
 
         private void ScanCurrent()
@@ -284,6 +265,8 @@ namespace Route24.GameOff
         private IEnumerator ScanRoutine(CargoEntryUI entry)
         {
             _isScanning = true;
+            
+            AudioManager.Instance.PlaySFX("CARGO_CONFIRM");
 
             // Set up visuals
             if (_scanProgress)

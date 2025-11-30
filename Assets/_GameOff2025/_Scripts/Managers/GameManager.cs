@@ -58,52 +58,12 @@ namespace Route24.GameOff
             Debug.Log($"=== Starting Day {currentDay} ===");
             
             AudioManager.Instance.PlaySFX("DAY_START");
+            state = GameplayState.WaitingForShip;
             
             _eventHub?.Publish(new DayStartedEvent(currentDay));
             _shipManager.StartNewDay(currentDay);
-
             _dayTimerCoroutine = StartCoroutine(DayTimeCoroutine());
-
             _shipManager.SpawnNewShip();
-            state = GameplayState.WaitingForShip;
-            
-            // ##HERE (DELETE!!!!!)
-            var shop = ServiceLocator.Get<UpgradeShopController>();
-
-            Debug.Log("=== Purchased Upgrades ===");
-
-            // Group by category → then sort by BaseId → then by Tier
-            var purchased = new Dictionary<string, List<UpgradeData>>();
-
-            foreach (var upgrade in shop.AllUpgradesOrdered)
-            {
-                if (!upgrade.Purchased) 
-                    continue;
-
-                if (!purchased.ContainsKey(upgrade.Category))
-                    purchased[upgrade.Category] = new List<UpgradeData>();
-
-                purchased[upgrade.Category].Add(upgrade);
-            }
-
-            if (purchased.Count == 0)
-            {
-                Debug.Log("No upgrades purchased yet.");
-            }
-            else
-            {
-                foreach (var category in purchased.Keys)
-                {
-                    Debug.Log($"-- {category} --");
-
-                    foreach (var up in purchased[category])
-                    {
-                        Debug.Log($"   {up.BaseId} T{up.Tier}  ->  {up.Description}");
-                    }
-                }
-            }
-
-            Debug.Log("==========================");
         }
 
         public void OnShipReadyForInspection()
