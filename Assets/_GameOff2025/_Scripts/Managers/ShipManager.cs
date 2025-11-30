@@ -11,6 +11,8 @@ namespace Route24.GameOff
     {
         public int InitializationPriority => 5;
 
+        public bool HasActiveShip => _currentShipController;
+
         private const int _arrayLength = 10; // max length for random generation ship arrays
         
         private GameManager _gameManager;
