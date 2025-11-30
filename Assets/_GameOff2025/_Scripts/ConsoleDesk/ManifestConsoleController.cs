@@ -23,20 +23,20 @@ namespace Route24.GameOff
         [SerializeField] private CanvasGroup _canvasGroup;
 
         [Header("Scan Settings")]
-        [SerializeField] private float _scanRevealDelay = 1f;
+        [SerializeField] private float _scanRevealDelay = 3f;
         [SerializeField] private Color _defaultColor = new(1f, 1f, 1f, 0f);
         [SerializeField] private Color _safeColor = Color.green;
         [SerializeField] private Color _bannedColor = Color.red;
         [SerializeField] private Color _scanColor = Color.cyan;
-        
-        [Header("Switches")]
-        [SerializeField] private LeverSwitchController _consoleLeverSwitch;
         
         [Header("Camera Settings")]
         [SerializeField] private SeatedCameraController _cameraController;
         [SerializeField] private Transform _cameraFocusPoint;
         [SerializeField] private Transform _cameraLookTarget;
         [SerializeField] private float _focusFOV = 40f;
+        
+        [Header("Tutorial Settings")]
+        [SerializeField] private ShipProfileSO _tutorialShipProfile;
 
         private List<CargoEntryUI> _shipEntries = new();
         private List<CargoItem> _bannedItems = new();
@@ -48,16 +48,28 @@ namespace Route24.GameOff
         private GameManager _gameManager;
         private EventHub _eventHub;
         private CargoManifestManager _manifestManager;
+        private UpgradeShopController _upgradeShopController;
         private ShipProfile _currentShip;
+        private Coroutine _autoDecodeRoutine;
+        private Coroutine _autoScanRoutine;
+        
+        private static readonly float[] MaskPercentages =
+        {
+            0.2f,  // Day 1, 20% chance
+            0.35f, // Day 2, 35% chance
+            0.5f,  // Day 3, 50% chance
+            0.75f, // Day 4, 75% chance
+            1f     // Day 5+, ALWAYS!
+        };
         
         public void SceneInitialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _manifestManager = ServiceLocator.Get<CargoManifestManager>();
             _gameManager = ServiceLocator.Get<GameManager>();
-
-            // _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
-            // _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            _upgradeShopController = ServiceLocator.Get<UpgradeShopController>();
+            
+            _eventHub.Subscribe<Tutorial_OnInspectionStartedEvent>(OnTutorialStartInspection);
             _eventHub.Subscribe<TutorialCompletedEvent>(OnStartup);
             _eventHub.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionEnded);
@@ -79,6 +91,16 @@ namespace Route24.GameOff
             _canvasGroup.alpha = 0f;
         }
 
+        private void OnTutorialStartInspection(Tutorial_OnInspectionStartedEvent obj)
+        {
+            ClearShipList();
+            ServiceLocator.Get<CargoManifestManager>().GenerateDailyBannedList(0);
+            _currentShip = _tutorialShipProfile.Profile;
+            PopulateShipList(_currentShip.CargoList);
+            PopulateShipDetails(false);
+            _canvasGroup.alpha = 1f;
+        }
+
         private void OnStartup(TutorialCompletedEvent obj)
         {
             ClearShipList();
@@ -94,27 +116,41 @@ namespace Route24.GameOff
             _currentShip = evt.Ship;
             PopulateShipList(_currentShip.CargoList);
             PopulateShipDetails();
+            
+            if (HasCargoAutoScanTier2())
+            {
+                // Run all scans at the same time
+                if (_autoScanRoutine != null)
+                    StopCoroutine(_autoScanRoutine);
+
+                _autoScanRoutine = StartCoroutine(AutoScanAllEntries_Instant());
+            }
+            else if (HasCargoAutoScan())
+            {
+                // Sequential scans
+                if (_autoScanRoutine != null)
+                    StopCoroutine(_autoScanRoutine);
+
+                _autoScanRoutine = StartCoroutine(AutoScanAllEntries());
+            }
         }
         
         private void OnInspectionEnded(InspectionCompletedEvent evt)
         {
             _currentShip = null;
             
-            ClearShipList();
+            if (_autoDecodeRoutine != null)
+            {
+                StopCoroutine(_autoDecodeRoutine);
+                _autoDecodeRoutine = null;
+            }
             
-            _consoleLeverSwitch?.ForceOff();
-        }
-        
-        private void OnLeverOn(LeverActivatedEvent evt)
-        {
-            Debug.Log("[ManifestConsole] Lever turned ON — loading ship cargo.");
-            if (_currentShip != null)
-                PopulateShipList(_currentShip.CargoList);
-        }
-
-        private void OnLeverOff(LeverDeactivatedEvent evt)
-        {
-            Debug.Log("[ManifestConsole] Lever turned OFF — clearing manifest.");
+            if (_autoScanRoutine != null)
+            {
+                StopCoroutine(_autoScanRoutine);
+                _autoScanRoutine = null;
+            }
+            
             ClearShipList();
         }
 
@@ -179,28 +215,115 @@ namespace Route24.GameOff
             _currentIndex = 0;
             UpdateHighlight();
         }
+
+        private float GetMaskPercentageByDay()
+        {
+            int day = _gameManager.currentDay;
+            
+            if (day <= MaskPercentages.Length)
+                return MaskPercentages[day - 1];
+
+            return MaskPercentages[MaskPercentages.Length - 1]; // 1f
+        }
         
-        private void PopulateShipDetails()
+        private void PopulateShipDetails(bool mask = true)
         {
             string shipCode = _currentShip.EntryCode;
-            
-            // 50% chance to mask ONE character
-            // We should add this percentage to our ship configs? idk
-            if (Random.value < 0.5f)
+
+            if (!HasKeypadInstantDecode())
             {
-                if (!string.IsNullOrEmpty(shipCode))
+                if (mask && Random.value < GetMaskPercentageByDay())
                 {
-                    int index = Random.Range(0, shipCode.Length);
+                    if (!string.IsNullOrEmpty(shipCode))
+                    {
+                        int index = Random.Range(0, shipCode.Length);
 
-                    char[] chars = shipCode.ToCharArray();
-                    chars[index] = '*';
+                        char[] chars = shipCode.ToCharArray();
+                        chars[index] = '*';
 
-                    shipCode = new string(chars);
+                        shipCode = new string(chars);
+
+                        if (HasKeypadDelayedDecode())
+                        {
+                            if (_autoDecodeRoutine != null)
+                                StopCoroutine(_autoDecodeRoutine);
+
+                            _autoDecodeRoutine = StartCoroutine(AutoDecodeRoutine(_currentShip.EntryCode));
+                        }
+                    }
+                }
+                else
+                {
+                    if (_autoDecodeRoutine != null)
+                        StopCoroutine(_autoDecodeRoutine);
                 }
             }
             
             _shipNameText.text = "SHIP: " + _currentShip.ShipName;
             _shipCodeText.text = "CODE: " + shipCode;
+        }
+        
+        private IEnumerator AutoDecodeRoutine(string fullCode)
+        {
+            float delay = 10f;
+            float elapsed = 0f;
+
+            while (elapsed < delay)
+            {
+                // If the ship clears, we should quit
+                if (_currentShip == null)
+                    yield break;
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+            
+            _shipCodeText.text = "CODE: " + fullCode;
+            _autoDecodeRoutine = null;
+        }
+        
+        private IEnumerator AutoScanAllEntries()
+        {
+            if (_shipEntries == null || _shipEntries.Count == 0)
+                yield break;
+            
+            foreach (var entry in _shipEntries)
+            {
+                if (entry == null || entry.IsScanned)
+                    continue;
+                
+                yield return StartCoroutine(ScanRoutine(entry));
+
+                // A tiny buffer otherwise we get some weird UI glitches
+                yield return new WaitForSeconds(0.1f);
+
+                // If inspection ended early, stop (ie sunk or dayover)
+                if (_currentShip == null)
+                    yield break;
+            }
+
+            _autoScanRoutine = null;
+        }
+        
+        private IEnumerator AutoScanAllEntries_Instant()
+        {
+            if (_shipEntries == null || _shipEntries.Count == 0)
+                yield break;
+
+            List<Coroutine> running = new List<Coroutine>();
+            
+            foreach (var entry in _shipEntries)
+            {
+                if (entry == null || entry.IsScanned)
+                    continue;
+                
+                running.Add(StartCoroutine(ScanRoutine(entry)));
+            }
+            
+            foreach (var c in running)
+                yield return c;
+
+            _autoScanRoutine = null;
         }
 
         private void ClearShipList()
@@ -255,6 +378,8 @@ namespace Route24.GameOff
             
             if (_highlightBar && _currentIndex < _shipEntries.Count)
                 _highlightBar.position = _shipEntries[_currentIndex].transform.position;
+            
+            AudioManager.Instance.PlaySFX("CARGO_SELECTION");
         }
 
         private void ScanCurrent()
@@ -269,6 +394,8 @@ namespace Route24.GameOff
         private IEnumerator ScanRoutine(CargoEntryUI entry)
         {
             _isScanning = true;
+            
+            AudioManager.Instance.PlaySFX("CARGO_CONFIRM");
 
             // Set up visuals
             if (_scanProgress)
@@ -280,14 +407,18 @@ namespace Route24.GameOff
 
             if (_highlightBackground)
                 _highlightBackground.color = _scanColor;
+            
+            // Adjust the time it takes to scan an entry based on whether we've purchased upgrades
+            float scanRevealTime = _scanRevealDelay - CargoReduceScanTime();
 
             // Fill animation
             float elapsed = 0f;
-            while (elapsed < _scanRevealDelay)
+            while (elapsed < scanRevealTime)
             {
                 elapsed += Time.deltaTime;
                 if (_scanProgress)
-                    _scanProgress.fillAmount = Mathf.Clamp01(elapsed / _scanRevealDelay);
+                    _scanProgress.fillAmount = Mathf.Clamp01(elapsed / scanRevealTime);
+                
                 yield return null;
             }
 
@@ -306,6 +437,11 @@ namespace Route24.GameOff
                 _highlightBackground.color = _defaultColor;
 
             _isScanning = false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                _eventHub?.Publish(new Tutorial_OnCargoScannedEvent());
+            }
         }
 
         private IEnumerator FlashBackground(Color flashColor)
@@ -341,6 +477,12 @@ namespace Route24.GameOff
                 _highlightBar.gameObject.SetActive(true);
 
             UpdateHighlight();
+            
+            // Tutorial related
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                _eventHub?.Publish(new Tutorial_OnCargoFocusedEvent());
+            }
         }
 
         public void ExitFocus()
@@ -377,20 +519,90 @@ namespace Route24.GameOff
 
         public bool CanInteract()
         {
-            return !_inFocus && !_recentlyExited && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            if (_recentlyExited) 
+                return false;
+            
+            if (_inFocus || !_gameManager)
+                return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                if (TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted) &&
+                    !TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool CanShowMessage()
         {
-            return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            if (_inFocus || !_gameManager)
+                return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                if (TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted) &&
+                    !TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void OnInteract()
         {
+            if (_recentlyExited) 
+                return;
+            
             if (_inFocus)
                 ExitFocus();
             else
                 EnterFocus();
+        }
+        
+        // ─────────────────────────────────────────────
+        // Stuff to help upgrades, idk, im tired
+        // ─────────────────────────────────────────────
+        private bool HasKeypadDelayedDecode()
+        {
+            return _upgradeShopController.IsPurchased("Keypad_T1");
+        }
+        
+        private bool HasKeypadInstantDecode()
+        {
+            return _upgradeShopController.IsPurchased("Keypad_T2");
+        }
+
+        private bool HasCargoAutoScan()
+        {
+            return _upgradeShopController.IsPurchased("Cargo_AutoScan_T1");
+        }
+        
+        private bool HasCargoAutoScanTier2()
+        {
+            return _upgradeShopController.IsPurchased("Cargo_AutoScan_T2");
+        }
+
+        private float CargoReduceScanTime()
+        {
+            if (_upgradeShopController.IsPurchased("Cargo_T2"))
+                return 2f;
+            
+            if (_upgradeShopController.IsPurchased("Cargo_T1"))
+                return 1f;
+            
+            return 0f;
         }
     }
 }

@@ -26,23 +26,35 @@ namespace Route24.GameOff
         private Material[] _digitMaterials;
         private EventHub _eventHub;
         private GameManager _gameManager;
+        private bool _isPaused = false;
         
         public void SceneInitialize()
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<DayEndedEvent>(e => ResetClock()); // Reset clock at end of day
+            ServiceLocator.Register(this);
+
+            _eventHub.Subscribe<DayEndedEvent>(e=>StopClock(false, true)); // Reset clock at end of day
             _eventHub.Subscribe<DayStartedEvent>(e => StartClock(ConstGameStats.DayTime)); // start clock at start of day
-            // _eventHub.Subscribe<InspectionCompletedEvent>(e => StopClock(e.Approved, e.TimedOut));
+            _eventHub.Subscribe<GamePausedEvent>(OnGamePaused);
             
             CacheDigitMaterials();
             UpdateDisplay(0);
         }
         
+        public string GetRemainingTimeFormatted()
+        {
+            int seconds = Mathf.Max(0, _remainingTime);
+            int minutes = seconds / 60;
+            int secs = seconds % 60;
+
+            return $"{minutes:00}:{secs:00}";
+        }
+
         private void Update()
         {
-            if (!_enableFlicker || !_isActive || _digitMaterials == null)
+            if (_isPaused || !_enableFlicker || !_isActive || _digitMaterials == null)
                 return;
             
             for (int i = 0; i < _digitMaterials.Length; i++)
@@ -53,6 +65,11 @@ namespace Route24.GameOff
                 Color flickerColor = Color.Lerp(_offColor, _activeColor, flicker);
                 _digitMaterials[i].SetColor(ShaderUtilities.ID_FaceColor, flickerColor);
             }
+        }
+        
+        private void OnGamePaused(GamePausedEvent e)
+        {
+            _isPaused = e.IsPaused;
         }
         
         private void CacheDigitMaterials()
@@ -96,8 +113,14 @@ namespace Route24.GameOff
         {
             while (_remainingTime > 0)
             {
+                while (_isPaused)
+                    yield return null;
+                
                 UpdateDisplay(_remainingTime);
+                
+                // This should still work despite pausing
                 yield return new WaitForSeconds(1f);
+                
                 _remainingTime--;
             }
 

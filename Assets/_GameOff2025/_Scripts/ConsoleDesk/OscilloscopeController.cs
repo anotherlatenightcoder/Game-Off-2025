@@ -28,7 +28,9 @@ namespace Route24.GameOff
 
         [Header("Settings")]
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
-
+        [SerializeField] private AudioSource _audioSource;
+        
+        private float baseVolume;
         public bool IsFocused => _inFocus;
         public bool IsTutorialBooting => _isBooting;
         public bool IsWaveMatched => _isWaveMatched;
@@ -55,14 +57,25 @@ namespace Route24.GameOff
                 return;
             }
             
-            _waveformRenderer.ParentController = this;
+            _waveformRenderer.Setup(this);
 
             InitializeKnobs();
             SetInitialWaveSettings();
             
+            baseVolume = _audioSource.volume;
+
+            if (AudioManager.Instance != null)
+                _audioSource.volume = baseVolume * AudioManager.Instance.sfxVolume; 
+            
             _eventHub?.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            _eventHub?.Subscribe<SfxVolumeChangedEvent>(OnSfxVolumeChanged);
             
             ServiceLocator.Register(typeof(OscilloscopeController), this);
+        }
+
+        private void OnSfxVolumeChanged(SfxVolumeChangedEvent obj)
+        {
+            _audioSource.volume = baseVolume * obj.Volume;
         }
 
         private void OnInspectionStarted(InspectionStartedEvent obj)
@@ -128,6 +141,9 @@ namespace Route24.GameOff
         
         private void SetFocus(bool state)
         {
+            if (_focusCooldownActive)
+                return;
+            
             if (state == _inFocus) return;
 
             _inFocus = state;
@@ -137,35 +153,28 @@ namespace Route24.GameOff
             {
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
                 _waveformRenderer.SetMatchUIVisible(true);
+
+                if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+                {
+                    _eventHub?.Publish(new Tutorial_ScopeFocusEvent());
+                }
                 
-                // if (!IsTutorialMode())
-                // {
-                //     _waveformRenderer.ResetMatchStateForNewSession();
-                // }
+                _audioSource.Play();
                 
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
             else
             {
-                // When we zoom out
-                // _waveformRenderer.StopSignals();
                 _focusCooldownActive = true;
-                // _waveformRenderer.SetMatchUIVisible(false);
-
                 _cameraController.ReturnToDefault();
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                
+                _audioSource.Stop();
 
                 StartCoroutine(FocusCooldownRoutine());
             }
-        }
-        
-        private bool IsTutorialMode()
-        {
-            return _gameManager.CurrentGameplayState == GameplayState.Tutorial &&
-                   TutorialController.Instance.TutorialStep1Completed &&
-                   !TutorialController.Instance.TutorialStep2Completed;
         }
 
         public void StartBootSequence()
@@ -221,31 +230,28 @@ namespace Route24.GameOff
         
         public bool CanInteract()
         {
-            if (_inFocus || _focusCooldownActive || _gameManager == null)
+            if (_focusCooldownActive)
                 return false;
             
-            // Allow access during normal gameplay inspection
-            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
-                return true;
+            if (_inFocus || _gameManager == null)
+                return false;
             
-            // Case for the tutorial, but only after step 1 has been completed
             if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
-                !TutorialController.Instance.TutorialStep2Completed)
+                TutorialController.Instance.IsStepCompleted(TutorialStep.ConsolePoweredOn) &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.CalibrationComplete))
                 return true;
 
-            return false;
+            return _gameManager.CurrentGameplayState == GameplayState.Inspecting;
         }
         
         public bool CanShowMessage()
         {
             if (_inFocus) return false;
 
-            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
-            {
-                if (TutorialController.Instance.TutorialStep1Completed &&
-                    !TutorialController.Instance.TutorialStep2Completed)
-                    return true;
-            }
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                TutorialController.Instance.IsStepCompleted(TutorialStep.ConsolePoweredOn) &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.CalibrationComplete))
+                return true;
             
             return _gameManager.CurrentGameplayState == GameplayState.Inspecting;
         }
@@ -254,7 +260,9 @@ namespace Route24.GameOff
 
         public void WaveMatched()
         {
+            _audioSource.Stop();
             _isWaveMatched = true;
+            AudioManager.Instance.PlaySFX("SCANNER_MATCH");
             _eventHub?.Publish(new WaveMatchedEvent());
         }
     }

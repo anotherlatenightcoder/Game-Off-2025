@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Route24.Core;
@@ -9,36 +7,50 @@ using UnityEngine.UI;
 
 namespace Route24.GameOff
 {
-    public class EndDayUI : MonoBehaviour, IService, IInitializable
+    public class EndDayUI : MonoBehaviour, ISceneInitializable
     {
-        public int InitializationPriority => 16;
-        
         [Header("Scene References")]
-        [SerializeField] private GameObject _endDayPanel;
-        [SerializeField] private Transform _transactionHolder;
+        [SerializeField] private CanvasGroup _dayCanvas;
+
+        [SerializeField] private Transform _incomeHolder;
+        [SerializeField] private Transform _expenseHolder;
+
         [SerializeField] private TextMeshProUGUI _dayText;
-        [SerializeField] private TextMeshProUGUI _currencyText;
-        [SerializeField] private Button _nextDayButton;
+
+        [Header("Totals")]
+        [SerializeField] private TextMeshProUGUI _incomeTotalText;
+        [SerializeField] private TextMeshProUGUI _expenseTotalText;
+        [SerializeField] private TextMeshProUGUI _balanceText;
 
         [Header("Asset References")] 
         [SerializeField] private TransactionElement _transactionPrefab;
-        
-        private List<TransactionElement> _transactionElements = new List<TransactionElement>();
-        
+        [SerializeField] private UpgradeShopUI _shopUI;
+
+        // Separate UI pools
+        private readonly List<TransactionElement> _incomeElements = new();
+        private readonly List<TransactionElement> _expenseElements = new();
+
         private GameManager _gameManager;
         private CurrencyManager _currencyManager;
         private EventHub _eventHub;
-        private ShipManager _shipManager;
-        
-        public void Initialize()
+
+        public void SceneInitialize()
         {
+            Debug.Log("[EndDayUI] SceneInitialize " + GetInstanceID());
+            
             _gameManager = ServiceLocator.Get<GameManager>();
             _currencyManager = ServiceLocator.Get<CurrencyManager>();
             _eventHub = ServiceLocator.Get<EventHub>();
-            _shipManager = ServiceLocator.Get<ShipManager>();
-            
+
             _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
-            _nextDayButton.onClick.AddListener(OnNextDayButtonClicked);
+        }
+
+        void Update()
+        {
+            if (_dayCanvas != null && _dayCanvas.interactable && Input.GetKeyDown(KeyCode.Space))
+            {
+                OpenUpgradeShop();
+            }
         }
 
         private void OnDestroy()
@@ -59,86 +71,145 @@ namespace Route24.GameOff
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.Confined;
             
+            _dayCanvas.alpha = 1;
+            _dayCanvas.interactable = true;
+            _dayCanvas.blocksRaycasts = true;
+
             ShowTransactions();
-            _dayText.text = $"Day {dayEndedEvent.Day}";
             
-            _endDayPanel.SetActive(true);
+            _dayText.text = $"Day {dayEndedEvent.Day}";
         }
         
-        private void OnNextDayButtonClicked()
+        public void OpenUpgradeShop()
         {
+            _dayCanvas.alpha = 0;
+            _dayCanvas.interactable = false;
+            _dayCanvas.blocksRaycasts = false;
+            
+            _shopUI.Show();
+        }
+
+        public void OnNextDayButtonClicked()
+        {
+            Debug.Log("[EndDayUI] OnNextDayButtonClicked");
+            
             Cursor.visible = false;
-            _endDayPanel.SetActive(false);
             
-            _currencyManager.ResetSavings(GetCurrency());
-            HandleSelectedTransactionOptions();
+            _dayCanvas.alpha = 0;
+            _dayCanvas.interactable = false;
+            _dayCanvas.blocksRaycasts = false;
+
+            _currencyManager.ResetSavings(GetBalance());
             HideAllTransactions();
-            
+
             _gameManager.StartNewDay();
         }
 
-        #region Transactions
+        // -----------------------------------------------------------
+        // -------------------   TRANSACTIONS   -----------------------
+        // -----------------------------------------------------------
+
         private void ShowTransactions()
         {
-            var transactions = _currencyManager.GetTransactions();                         // get transactions
-            var uiTransactions = Transactions.ConvertToUIList(transactions);         // convert to UI list
-            uiTransactions.AddRange(_currencyManager.GetRegularExpenses.ConvertToOptionsList()); // add regular expenses
-            uiTransactions.AddRange(_currencyManager.GetExpenseOptions);                                 // add possible expenses
-            
-            SetTransactionUI(uiTransactions);
-            UpdateCurrencyText();
-        }
+            var all = new List<TransactionOption>();
 
-        private void SetTransactionUI(List<TransactionOption> transactions)
-        {
-            for (int i = 0; i < transactions.Count; i++)
+            // Add today's real transactions
+            all.AddRange(Transactions.ConvertToUIList(_currencyManager.GetTransactions()));
+
+            // Add recurring expenses
+            all.AddRange(_currencyManager.GetRegularExpenses.ConvertToOptionsList());
+
+            // Add optional expenses
+            all.AddRange(_currencyManager.GetExpenseOptions);
+
+            // Split into income + expense groups
+            var income = new List<TransactionOption>();
+            var expenses = new List<TransactionOption>();
+
+            foreach (var t in all)
             {
-                if (i >= _transactionElements.Count) 
-                    SpawnTransactionElement();
-                
-                TransactionOption optionTransaction = transactions[i];
-                if(optionTransaction.IsPossibleExpense)
-                    _transactionElements[i].ShowPossibleTransaction(optionTransaction);
+                if (t.Transaction.Type == ETransaction.income)
+                    income.Add(t);
                 else
-                    _transactionElements[i].ShowTransaction(transactions[i].Transaction);
+                    expenses.Add(t);
             }
+
+            SetIncomeUI(income);
+            SetExpenseUI(expenses);
+            UpdateTotals();
         }
 
-        private void SpawnTransactionElement()
+        private void SetIncomeUI(List<TransactionOption> list)
         {
-            TransactionElement element = Instantiate(_transactionPrefab, _transactionHolder);
-            element.SetSelectedCallback(UpdateCurrencyText);
-            _transactionElements.Add(element);
+            EnsureUIListSize(list.Count, _incomeElements, _incomeHolder);
+
+            for (int i = 0; i < list.Count; i++)
+                AssignTransactionToElement(_incomeElements[i], list[i]);
         }
 
-        private void HandleSelectedTransactionOptions()
+        private void SetExpenseUI(List<TransactionOption> list)
         {
-            foreach (TransactionElement element in _transactionElements)
-                element.TryFireExpenseCallback();
+            EnsureUIListSize(list.Count, _expenseElements, _expenseHolder);
+
+            for (int i = 0; i < list.Count; i++)
+                AssignTransactionToElement(_expenseElements[i], list[i]);
         }
-        
+
+        private void EnsureUIListSize(int count, List<TransactionElement> pool, Transform parent)
+        {
+            while (pool.Count < count)
+            {
+                var e = Instantiate(_transactionPrefab, parent);
+                pool.Add(e);
+            }
+
+            // Activate needed
+            for (int i = 0; i < pool.Count; i++)
+                pool[i].gameObject.SetActive(i < count);
+        }
+
+        private void AssignTransactionToElement(TransactionElement element, TransactionOption option)
+        {
+            element.ShowTransaction(option.Transaction);
+        }
+
         private void HideAllTransactions()
         {
-            foreach (TransactionElement element in _transactionElements)
-                element.Hide();
-        }
-        #endregion
-        
-        private void UpdateCurrencyText()
-        {
-            _currencyText.text = $"${GetCurrency()}";
-            
-            _currencyText.transform.parent.SetAsLastSibling();
+            foreach (var e in _incomeElements) e.Hide();
+            foreach (var e in _expenseElements) e.Hide();
         }
 
-        private int GetCurrency()
+        // -----------------------------------------------------------
+        // -----------------------   TOTALS   -------------------------
+        // -----------------------------------------------------------
+
+        private int GetIncomeTotal()
         {
-            int currency = 0;
-            
-            foreach (TransactionElement element in _transactionElements)
-                currency += element.GetCurrencyAffect();
-            
-            return currency;
+            int total = 0;
+            foreach (var e in _incomeElements)
+                total += e.GetCurrencyAffect();
+            return total;
+        }
+
+        private int GetExpenseTotal()
+        {
+            int total = 0;
+            foreach (var e in _expenseElements)
+                total += e.GetCurrencyAffect();
+            return total;
+        }
+
+        private int GetBalance() => GetIncomeTotal() + GetExpenseTotal();
+
+        private void UpdateTotals()
+        {
+            int income = GetIncomeTotal();
+            int expense = GetExpenseTotal();
+            int balance = income + expense;
+
+            _incomeTotalText.text = $"${income}";
+            _expenseTotalText.text = $"${expense}";
+            _balanceText.text = $"${balance}";
         }
     }
 }

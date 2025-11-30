@@ -10,7 +10,7 @@ namespace Route24.GameOff
         [Range(0,6)]
         public int MinCargoCount = 3;
         [Range(0,12)]
-        public int MaxCargoCount = 5;
+        public int MaxCargoCount = 6;
 
         [Range(0, 10)]
         public int ValidPercentage = 8; // ships with valid documentation, they can be approved

@@ -11,22 +11,17 @@ namespace Route24.GameOff
         public int Amount;
         public string Reason;
         public TimeStamp TimeStamp;
+        public int Day;
     }
     
     [System.Serializable]
     public struct TransactionOption
     {
         public Transaction Transaction;
-        public Action OnExpenseMade; // fire when expense is made, upgrades etc
-        public bool IsPossibleExpense;
-        public bool IsSelected;
 
-        public TransactionOption(Transaction transaction, bool isPossibleExpense = false, bool isSelected = false, Action onExpenseMade = null)
+        public TransactionOption(Transaction transaction)
         {
             Transaction = transaction;
-            IsPossibleExpense = isPossibleExpense;
-            IsSelected = isSelected;
-            OnExpenseMade = onExpenseMade;
         }
     }
 }

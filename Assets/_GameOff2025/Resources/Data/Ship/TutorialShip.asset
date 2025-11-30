@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b19544ea62bc4988b9acf78707d609cf, type: 3}
+  m_Name: TutorialShip
+  m_EditorClassIdentifier: Assembly-CSharp::Route24.GameOff.ShipProfileSO
+  Profile:
+    ShipName: Bob's Dinghy
+    CargoList:
+    - {fileID: 11400000, guid: b857086a6780a814b9ad1e9997ae8d71, type: 2}
+    - {fileID: 11400000, guid: b857086a6780a814b9ad1e9997ae8d71, type: 2}
+    - {fileID: 11400000, guid: afd05121ea530e648be1504347b8b508, type: 2}
+    - {fileID: 11400000, guid: 68c6dd1544282c74ea9dd4e1c743151f, type: 2}
+    IsValid: 0
+    ShipInspectionTime: 30
+    ShipPrefab: {fileID: 0}
+    EntryCode: 1234

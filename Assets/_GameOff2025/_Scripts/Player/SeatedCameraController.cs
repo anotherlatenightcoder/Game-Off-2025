@@ -5,6 +5,8 @@ namespace Route24.GameOff
 {
     public class SeatedCameraController : MonoBehaviour
     {
+        public static SeatedCameraController Instance { get; private set; }
+        
         [Header("Camera Rotation")]
         [SerializeField] private float _mouseSensitivity = 3f;
         [SerializeField] private float _maxYaw = 45f;
@@ -16,6 +18,11 @@ namespace Route24.GameOff
         [Header("Zoom Settings")]
         [SerializeField] private float _zoomFOV = 40f;
         [SerializeField] private float _zoomDuration = 0.35f;
+        
+        public float GetMouseSensitivity() => _mouseSensitivity;
+        
+        private const float MIN_SENSITIVITY = 0.5f;
+        private const float MAX_SENSITIVITY = 10f;
 
         private float _yaw;
         private float _pitch;
@@ -33,6 +40,14 @@ namespace Route24.GameOff
 
         private void Start()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
+            
             _cam = GetComponent<Camera>();
             _initialRotation = transform.localEulerAngles;
 
@@ -50,6 +65,26 @@ namespace Route24.GameOff
 
             HandleMouseLook();
             HandleZoomToggle();
+        }
+        
+        public void SetMouseSensitivity(float value)
+        {
+            _mouseSensitivity = Mathf.Clamp(value, MIN_SENSITIVITY, MAX_SENSITIVITY);
+        }
+        
+        public void SetMouseSensitivityFromSlider(float sliderValue)
+        {
+            _mouseSensitivity = SliderToSensitivity(sliderValue);
+        }
+        
+        private float SliderToSensitivity(float sliderValue)
+        {
+            return Mathf.Lerp(MIN_SENSITIVITY, MAX_SENSITIVITY, sliderValue);
+        }
+        
+        public float SensitivityToSlider(float sensitivity)
+        {
+            return Mathf.InverseLerp(MIN_SENSITIVITY, MAX_SENSITIVITY, sensitivity);
         }
         
         private void HandleZoomToggle()

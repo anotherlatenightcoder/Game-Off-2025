@@ -39,24 +39,42 @@ namespace Route24.GameOff
 
         public bool CanInteract()
         {
-            return _gameManager && _gameManager.CurrentGameplayState == GameplayState.ReadyForInspection;
+            if (!_gameManager) return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted))
+                return true;
+
+            return _gameManager.CurrentGameplayState == GameplayState.ReadyForInspection;
         }
 
         public bool CanShowMessage()
         {
-            return _gameManager && _gameManager.CurrentGameplayState == GameplayState.ReadyForInspection;
+            if (!_gameManager) return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial &&
+                !TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted))
+                return true;
+
+            return _gameManager.CurrentGameplayState == GameplayState.ReadyForInspection; 
         }
 
         public void OnInteract()
         {
             if (_gameManager)
             {
-                Debug.Log("Switch flipped — starting inspection!");
                 _indicatorLight?.SetLight(false);
-                _gameManager.StartInspection();
                 
                 if (_buttonSoundString != "")
                     AudioManager.Instance.PlaySFX(_buttonSoundString);
+                
+                if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+                {
+                    _eventHub?.Publish(new Tutorial_OnInspectionStartedEvent());
+                    return;
+                }
+                
+                _gameManager.StartInspection();
             }
         }
         
