@@ -112,6 +112,17 @@ namespace Route24.GameOff
         private bool _tutorialMode = false;
         private float _tutorialShipAmp, _tutorialShipFreq, _tutorialShipOffset;
         private float _tutorialPlayerAmp, _tutorialPlayerFreq, _tutorialPlayerOffset;
+        
+        private UpgradeShopController _upgradeController;
+        
+        private static readonly float[] WaveSpeedByDay =
+        {
+            1f,     // Day 1, normal speed
+            1.25f,  // Day 2, 25% increase
+            1.75f,  // Day 3, 75% increase
+            2.5f,   // Day 4, 150% increase
+            5f      // Day 5+, MAXIMUM POWER!
+        };
 
         // ─────────────────────────────────────────────
         // Initialization
@@ -121,13 +132,18 @@ namespace Route24.GameOff
             base.Awake();
             _rand = new System.Random();
             _visibilityMask = new bool[_resolution];
-            RegenerateNoiseMask();
 
             // Hide all UI elements
             _bootPanel.alpha = 0f;
             _waveInfoPanel.alpha = 0f;
             _completePanel.alpha = 0f;
             _waveCanvas.alpha = 0f;
+        }
+
+        public void Setup(OscilloscopeController parent)
+        {
+            ParentController = parent;
+            _upgradeController = ServiceLocator.Get<UpgradeShopController>();
         }
 
         // ─────────────────────────────────────────────
@@ -144,14 +160,53 @@ namespace Route24.GameOff
         
         public void SetPlayerOffset(float value) =>
             _playerTimeOffset = Mathf.Clamp(value, -3, 3f);
+        
+        private float GetWaveSpeedForDay()
+        {
+            int day = ServiceLocator.Get<GameManager>().currentDay;
+            
+            if (day <= 1) return WaveSpeedByDay[0];
+
+            if (day <= WaveSpeedByDay.Length)
+                return WaveSpeedByDay[day - 1];
+            
+            return WaveSpeedByDay[WaveSpeedByDay.Length - 1];
+        }
 
         public void StartNewSignalGame()
         {
             SetRandomShipSettings();
+            RegenerateNoiseMask();
 
             _targetAmplitude = _shipAmplitude;
             _currentAmplitude = _shipAmplitude;
             _playerTimeOffset = _shipTimeOffset;
+            
+            _waveSpeed = GetWaveSpeedForDay();
+            
+            // Here we set the match time based on upgrades
+            float reduction = 0f;
+            
+            if (HasMatchTimeT2()) 
+                reduction += 3f;
+            else if (HasMatchTimeT1()) 
+                reduction += 1.5f;
+
+            _holdDuration = Mathf.Max(0.5f, _holdDuration - reduction);
+            
+            // Here we can handle the percentage reduction as well
+            float percentageReduction = 0f;
+            
+            if (HasMatchPercT2())
+                percentageReduction += 20f;
+            else if (HasMatchPercT1())
+                percentageReduction += 10f;
+
+            _matchThreshold = Mathf.Clamp(_matchThreshold - percentageReduction, 10f, 100f);
+            
+            // Disable the random changes if upgraded
+            if (HasDisableRandom())
+                _shipHasVariation = false;
 
             if (_shipHasVariation)
                 ScheduleNextState();
@@ -259,6 +314,14 @@ namespace Route24.GameOff
         {
             if (_visibilityMask == null || _visibilityMask.Length != _resolution)
                 _visibilityMask = new bool[_resolution];
+            
+            if (HasDisableRandom())
+            {
+                // force 100% stable signal
+                for (int i = 0; i < _resolution; i++)
+                    _visibilityMask[i] = true;
+                return;
+            }
 
             for (int i = 0; i < _resolution; i++)
                 _visibilityMask[i] = _rand.NextDouble() < (_signalIntegrity / 100f);
@@ -362,8 +425,9 @@ namespace Route24.GameOff
                 return;
             }
 
-            //if (_shipHasVariation)  // this is making the game harder.
-            //    HandleShipBehavior();
+            // this is making the game harder, hehehe
+            if (_shipHasVariation && !HasDisableRandom())
+                HandleShipBehavior();
 
             _timeOffset += Time.deltaTime * _waveSpeed;
 
@@ -568,6 +632,13 @@ namespace Route24.GameOff
         {
             while (true)
             {
+                if (HasDisableRandom())
+                {
+                    _signalStrength = 1f;
+                    yield return null;
+                    continue;
+                }
+                
                 float wait = Random.Range(_signalChangeIntervalMin, _signalChangeIntervalMax);
                 yield return new WaitForSeconds(wait);
 
@@ -590,5 +661,17 @@ namespace Route24.GameOff
             _shipFrequency = Random.Range(_minShipFrequency, _maxShipFrequency);
             _shipTimeOffset = Random.Range(_minShipOffset, _maxShipOffset);
         }
+        
+        // ─────────────────────────────────────────────
+        // Upgrade related stuff
+        // ─────────────────────────────────────────────
+        
+        private bool HasMatchTimeT1() => _upgradeController.IsPurchased("Osc_MatchTime_T1");
+        private bool HasMatchTimeT2() => _upgradeController.IsPurchased("Osc_MatchTime_T2");
+
+        private bool HasMatchPercT1() => _upgradeController.IsPurchased("Osc_MatchPerc_T1");
+        private bool HasMatchPercT2() => _upgradeController.IsPurchased("Osc_MatchPerc_T2");
+
+        private bool HasDisableRandom() => _upgradeController.IsPurchased("Osc_Random_T1");
     }
 }

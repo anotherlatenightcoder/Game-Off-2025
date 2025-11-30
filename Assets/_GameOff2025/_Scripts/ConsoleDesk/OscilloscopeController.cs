@@ -56,7 +56,7 @@ namespace Route24.GameOff
                 return;
             }
             
-            _waveformRenderer.ParentController = this;
+            _waveformRenderer.Setup(this);
 
             InitializeKnobs();
             SetInitialWaveSettings();

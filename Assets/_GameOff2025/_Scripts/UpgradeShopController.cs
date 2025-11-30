@@ -38,6 +38,8 @@ namespace Route24.GameOff
             // ForceUnlock("Cargo_AutoScan_T2");
             // ForceUnlock("Cargo_T2");
             // ForceUnlock("Keypad_T2");
+            ForceUnlock("Osc_MatchTime_T2");
+            ForceUnlock("Osc_MatchPerc_T2");
         }
         private void ForceUnlock(string upgradeId)
         {

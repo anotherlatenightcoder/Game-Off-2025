@@ -9379,7 +9379,7 @@ MonoBehaviour:
   _signalStrengthMin: 0.8
   _signalStrengthMax: 1.2
   _matchThreshold: 90
-  _holdDuration: 3
+  _holdDuration: 5
   _drainSpeed: 0.5
   _matchPercentText: {fileID: 555069954}
   _timerText: {fileID: 1360991407}
