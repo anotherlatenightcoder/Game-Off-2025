@@ -20,6 +20,9 @@ public class AudioManager : MonoBehaviour, IService, IInitializable
 
     [Range(0f, 1f)]
     public float musicVolume = 1f;
+    
+    [Range(0f, 1f)]
+    public float sfxVolume = 1f;
 
     [Header("Sound Effects")]
     public List<NamedSFX> soundEffects = new List<NamedSFX>();
@@ -98,6 +101,21 @@ public class AudioManager : MonoBehaviour, IService, IInitializable
         // Adjust immediately but not above the new cap
         if (musicSource != null)
             musicSource.volume = Mathf.Min(musicSource.volume, musicVolume);
+    }
+    
+    public void SetSFXVolume(float value)
+    {
+        sfxVolume = Mathf.Clamp01(value);
+
+        // Update all internal SFX sources
+        for (int i = 0; i < sfxSources.Length; i++)
+        {
+            if (sfxSources[i] != null)
+                sfxSources[i].volume = sfxVolume;
+        }
+
+        // Notify external listeners, which in our case is the hacky oscillator 
+        _eventHub?.Publish(new SfxVolumeChangedEvent(sfxVolume));
     }
 
     // -------------------------------------------------------------------------
@@ -225,7 +243,7 @@ public class AudioManager : MonoBehaviour, IService, IInitializable
             if (!sfxSources[i].isPlaying)
             {
                 sfxSources[i].clip = clip;
-                sfxSources[i].volume = volume;
+                sfxSources[i].volume = volume * sfxVolume;
                 sfxSources[i].Play();
                 return;
             }
@@ -233,7 +251,7 @@ public class AudioManager : MonoBehaviour, IService, IInitializable
 
         // Fallback: play on the first source
         sfxSources[0].clip = clip;
-        sfxSources[0].volume = volume;
+        sfxSources[0].volume = volume * sfxVolume;
         sfxSources[0].Play();
     }
 }

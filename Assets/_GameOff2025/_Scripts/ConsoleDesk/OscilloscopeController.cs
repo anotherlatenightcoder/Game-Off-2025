@@ -29,7 +29,8 @@ namespace Route24.GameOff
         [Header("Settings")]
         [SerializeField, Range(0.1f, 2f)] private float _exitCooldown = 0.5f;
         [SerializeField] private AudioSource _audioSource;
-
+        
+        private float baseVolume;
         public bool IsFocused => _inFocus;
         public bool IsTutorialBooting => _isBooting;
         public bool IsWaveMatched => _isWaveMatched;
@@ -61,9 +62,20 @@ namespace Route24.GameOff
             InitializeKnobs();
             SetInitialWaveSettings();
             
+            baseVolume = _audioSource.volume;
+
+            if (AudioManager.Instance != null)
+                _audioSource.volume = baseVolume * AudioManager.Instance.sfxVolume; 
+            
             _eventHub?.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            _eventHub?.Subscribe<SfxVolumeChangedEvent>(OnSfxVolumeChanged);
             
             ServiceLocator.Register(typeof(OscilloscopeController), this);
+        }
+
+        private void OnSfxVolumeChanged(SfxVolumeChangedEvent obj)
+        {
+            _audioSource.volume = baseVolume * obj.Volume;
         }
 
         private void OnInspectionStarted(InspectionStartedEvent obj)

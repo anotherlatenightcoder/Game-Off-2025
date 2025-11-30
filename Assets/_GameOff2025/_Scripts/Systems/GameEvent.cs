@@ -220,4 +220,14 @@ namespace Route24.Core
             NewState = current;
         }
     }
+
+    public struct SfxVolumeChangedEvent
+    {
+        public float Volume;
+
+        public SfxVolumeChangedEvent(float volume)
+        {
+            Volume = volume;
+        }
+    }
 }
