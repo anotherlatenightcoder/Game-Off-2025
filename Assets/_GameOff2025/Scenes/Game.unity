@@ -19535,17 +19535,17 @@ MonoBehaviour:
   - key: DECLINE_BUTTON
     clip: {fileID: 8300000, guid: a8075aabd7e716b4a81cf27036114aaa, type: 3}
   - key: DAY_START
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 14d9fbd442e02af468ef9a39824453b5, type: 3}
   - key: KNOB_TURNING
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: ed6ec990207141f46af1ec0110e36072, type: 3}
   - key: SCANNER_MATCH
-    clip: {fileID: 8300000, guid: 78e1e8de078b5ef4499dc5127aa12c54, type: 3}
+    clip: {fileID: 8300000, guid: 0852b0c13f3bd6b458c7898c59b3803b, type: 3}
   - key: BUTTON_COVER_OPEN
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: e2c30379b314701418d02703f8c763fe, type: 3}
   - key: KEYPAD_SUCCESS
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 9b90dd2b29baa6747a33bd43c94cfa86, type: 3}
   - key: KEYPAD_FAILURE
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 33d8b1ddeeecec745bb2bfe16d0a554c, type: 3}
 --- !u!1001 &1663661513
 PrefabInstance:
   m_ObjectHideFlags: 0
