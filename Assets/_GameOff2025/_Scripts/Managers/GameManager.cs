@@ -133,7 +133,8 @@ namespace Route24.GameOff
         
         private IEnumerator DayTimeCoroutine()
         {
-            yield return new WaitForSeconds(ConstGameStats.DayTime);
+            // Little hack here to add a few seconds to the daytime routine since the clock doesn't quite match up
+            yield return new WaitForSeconds(ConstGameStats.DayTime+2);
             EndOfDay();
         }
         

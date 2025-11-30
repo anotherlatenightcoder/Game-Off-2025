@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
+using Route24.Core;
 using UnityEngine;
 
-public class AudioManager : MonoBehaviour
+public class AudioManager : MonoBehaviour, IService, IInitializable
 {
     public static AudioManager Instance { get; private set; }
 
@@ -14,6 +16,8 @@ public class AudioManager : MonoBehaviour
 
     [Header("Background Music")]
     public AudioClip backgroundMusic;
+    public AudioClip endDayMusic;
+
     [Range(0f, 1f)]
     public float musicVolume = 1f;
 
@@ -25,57 +29,138 @@ public class AudioManager : MonoBehaviour
     private const int SFX_SOURCE_COUNT = 5;
 
     private Dictionary<string, AudioClip> _lookup;
-    
     private string _exclusiveKey = "KNOB_TURNING";
 
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+    private EventHub _eventHub;
+    private Coroutine _fadeRoutine;
 
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
+    public int InitializationPriority => 50;
+
+    private bool _hasInitialized = false;
+
+    public void Initialize()
+    {
+        if (Instance == null) Instance = this;
 
         SetupChildren();
         BuildLookup();
-        
-        if (backgroundMusic)
-        {
-            musicSource.clip = backgroundMusic;
-            musicSource.volume = musicVolume;
-            musicSource.loop = true;
-            musicSource.Play();
-        }
+
+        _eventHub = ServiceLocator.Get<EventHub>();
+        _eventHub.Subscribe<TutorialStartedEvent>(OnTutorialStarted);
+        _eventHub.Subscribe<DayStartedEvent>(OnDayStarted);
+        _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
+
+        _hasInitialized = true;
     }
 
     private void Update()
     {
-        musicSource.volume = musicVolume;
+        if (!_hasInitialized)
+            return;
         
+        // Always clamp the music source to the current user volume
+        musicSource.volume = Mathf.Clamp(musicSource.volume, 0f, musicVolume);
+
         for (int i = 0; i < sfxSources.Length; i++)
         {
             if (!sfxSources[i].isPlaying)
-            {
                 sfxSources[i].clip = null;
-            }
         }
     }
+
+    // -------------------------------------------------------------------------
+    // EVENT HOOKS
+    // -------------------------------------------------------------------------
     
+    private void OnTutorialStarted(TutorialStartedEvent obj)
+    {
+        PlayMusic(backgroundMusic);
+    }
+
+    private void OnDayStarted(DayStartedEvent e)
+    {
+        PlayMusic(backgroundMusic);
+    }
+
+    private void OnDayEnded(DayEndedEvent e)
+    {
+        PlayMusic(endDayMusic);
+    }
+
+    // -------------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------------
+
+    public void SetMusicVolume(float value)
+    {
+        musicVolume = Mathf.Clamp01(value);
+
+        // Adjust immediately but not above the new cap
+        if (musicSource != null)
+            musicSource.volume = Mathf.Min(musicSource.volume, musicVolume);
+    }
+
+    // -------------------------------------------------------------------------
+    // MUSIC LOGIC
+    // -------------------------------------------------------------------------
+
+    private void PlayMusic(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (_fadeRoutine != null)
+            StopCoroutine(_fadeRoutine);
+
+        _fadeRoutine = StartCoroutine(FadeToClip(clip));
+    }
+
+    private IEnumerator FadeToClip(AudioClip newClip)
+    {
+        float duration = 2f;
+
+        // Step 1 — Fade out current music
+        float startVol = musicSource.volume;
+        float t = 0;
+
+        while (t < 1f)
+        {
+            t += Time.unscaledDeltaTime / duration;
+            musicSource.volume = Mathf.Lerp(startVol, 0f, t);
+            yield return null;
+        }
+
+        // Step 2 — Swap the clip
+        musicSource.clip = newClip;
+        musicSource.loop = true;
+        musicSource.Play();
+
+        // Step 3 — Fade in to musicVolume
+        t = 0;
+        while (t < 1f)
+        {
+            t += Time.unscaledDeltaTime / duration;
+            musicSource.volume = Mathf.Lerp(0f, musicVolume, t);
+            yield return null;
+        }
+
+        musicSource.volume = musicVolume;
+        _fadeRoutine = null;
+    }
+
+    // -------------------------------------------------------------------------
+    // SFX LOGIC
+    // -------------------------------------------------------------------------
+
     private void BuildLookup()
     {
         _lookup = new Dictionary<string, AudioClip>();
         foreach (var sfx in soundEffects)
         {
             if (!string.IsNullOrEmpty(sfx.key) && sfx.clip != null)
-            {
                 _lookup[sfx.key] = sfx.clip;
-            }
         }
     }
-    
+
     private void SetupChildren()
     {
         Transform musicChild = transform.Find("MusicSource");
@@ -91,7 +176,6 @@ public class AudioManager : MonoBehaviour
         }
 
         sfxSources = new AudioSource[SFX_SOURCE_COUNT];
-
         for (int i = 0; i < SFX_SOURCE_COUNT; i++)
         {
             Transform sfxChild = transform.Find("SFXSource_" + i);
@@ -124,22 +208,18 @@ public class AudioManager : MonoBehaviour
             Debug.LogWarning("SFX clip missing for key: " + key);
             return;
         }
-    
-        // Lets only allow one knob turn to play
-        // No idea how long the clip
+
+        // Exclusive clip (knob turning)
         if (key == _exclusiveKey)
         {
             for (int i = 0; i < sfxSources.Length; i++)
             {
                 if (sfxSources[i].isPlaying && sfxSources[i].clip == clip)
-                {
-                    // It's already playing so we ignore this request
-                    return;
-                }
+                    return; // Already playing
             }
         }
 
-        // all the other shit we need to play
+        // Normal SFX logic
         for (int i = 0; i < sfxSources.Length; i++)
         {
             if (!sfxSources[i].isPlaying)
@@ -151,7 +231,7 @@ public class AudioManager : MonoBehaviour
             }
         }
 
-        // !important
+        // Fallback: play on the first source
         sfxSources[0].clip = clip;
         sfxSources[0].volume = volume;
         sfxSources[0].Play();

@@ -16,6 +16,7 @@ namespace Route24.GameOff
         [SerializeField] private TextMeshProUGUI balanceText;
 
         private UpgradeShopController _controller;
+        private PauseManager _pauseManager;
         private List<UpgradeUIElement> _elements = new();
 
         private int _currentIndex = -1;
@@ -25,6 +26,7 @@ namespace Route24.GameOff
         public void SceneInitialize()
         {
             _controller = ServiceLocator.Get<UpgradeShopController>();
+            _pauseManager = ServiceLocator.Get<PauseManager>();
             Hide();
         }
 
@@ -48,6 +50,7 @@ namespace Route24.GameOff
         private void Update()
         {
             if (!_panelCanvas.interactable) return;
+            if (_pauseManager.IsPaused) return;
 
             HandleNavigationInput();
             HandlePurchaseInput();

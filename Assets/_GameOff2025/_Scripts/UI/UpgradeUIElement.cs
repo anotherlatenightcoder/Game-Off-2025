@@ -33,6 +33,19 @@ namespace Route24.GameOff
         public bool CanPurchase => CanHighlight;
         public UpgradeData Data => _data;
 
+        public void Setup(UpgradeData data)
+        {
+            _data = data;
+            _buyAction = null;
+
+            nameText.text = data.Description;
+            tierText.text = $"Tier {data.Tier}";
+            costText.text = $"${data.Cost}";
+
+            UpdateState();
+
+            entryBG.color = normalColor;
+        }
         public void Setup(UpgradeData data, System.Action<UpgradeData> buyAction)
         {
             _data = data;
