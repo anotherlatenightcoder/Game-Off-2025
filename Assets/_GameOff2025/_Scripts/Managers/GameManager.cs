@@ -19,7 +19,8 @@ namespace Route24.GameOff
         private ShipManager _shipManager;
         private EventHub _eventHub;
         private bool inspectionActive = false;
-        private float timer;
+        private Coroutine _dayTimerCoroutine;
+        private bool _tutorialCompleted = false;
         
         public static void SetFocusMode(bool value)
         {
@@ -35,60 +36,74 @@ namespace Route24.GameOff
 
         private void OnSceneLoaded(SceneLoadedEvent scene)
         {
-            StartCoroutine(DelayedStartOfDay());
+            StartCoroutine(StartTutorialRoutine());
         }
         
         private IEnumerator DelayedStartOfDay()
         {
             Debug.Log("[GameManager] Preparing environment...");
-            yield return new WaitForSeconds(5f);
+            yield return new WaitForSeconds(ConstGameStats.DelayBeforeDayStart);
+            
+            state = GameplayState.WaitingForShip;
 
             Debug.Log("[GameManager] Starting first day...");
             StartNewDay();
         }
-
-        private void Update()
-        {
-            HandleDebugInput();
-            HandleTimer();
-        }
-
-        private void HandleDebugInput()
-        {
-            if (inspectionActive)
-            {
-                if (Input.GetKeyDown(KeyCode.Alpha1))
-                    CompleteInspection(true);
-
-                if (Input.GetKeyDown(KeyCode.Alpha2))
-                    CompleteInspection(false);
-            }
-        }
         
-        private void HandleTimer()
+        public void StartNewDay()
         {
-            if (!inspectionActive) return;
-
-            timer -= Time.deltaTime;
-            if (timer <= 0)
-            {
-                Debug.Log($"Time ran out for ship {_shipManager.GetCurrentShipProfile().ShipName}");
-                CompleteInspection(false, true);
-            }
-        }
-        
-        private void StartNewDay()
-        {
+            if (CurrentGameplayState == GameplayState.Tutorial)
+                return;
+            
             Debug.Log($"=== Starting Day {currentDay} ===");
-            _shipManager.StartNewDay(currentDay);
+            
+            AudioManager.Instance.PlaySFX("DAY_START");
             
             _eventHub?.Publish(new DayStartedEvent(currentDay));
+            _shipManager.StartNewDay(currentDay);
+
+            _dayTimerCoroutine = StartCoroutine(DayTimeCoroutine());
+
+            _shipManager.SpawnNewShip();
+            state = GameplayState.WaitingForShip;
             
-            if (_shipManager.TrySpawnNextShip())
-                state = GameplayState.WaitingForShip;
-            else 
-                EndOfDay();
-                
+            // ##HERE (DELETE!!!!!)
+            var shop = ServiceLocator.Get<UpgradeShopController>();
+
+            Debug.Log("=== Purchased Upgrades ===");
+
+            // Group by category → then sort by BaseId → then by Tier
+            var purchased = new Dictionary<string, List<UpgradeData>>();
+
+            foreach (var upgrade in shop.AllUpgradesOrdered)
+            {
+                if (!upgrade.Purchased) 
+                    continue;
+
+                if (!purchased.ContainsKey(upgrade.Category))
+                    purchased[upgrade.Category] = new List<UpgradeData>();
+
+                purchased[upgrade.Category].Add(upgrade);
+            }
+
+            if (purchased.Count == 0)
+            {
+                Debug.Log("No upgrades purchased yet.");
+            }
+            else
+            {
+                foreach (var category in purchased.Keys)
+                {
+                    Debug.Log($"-- {category} --");
+
+                    foreach (var up in purchased[category])
+                    {
+                        Debug.Log($"   {up.BaseId} T{up.Tier}  ->  {up.Description}");
+                    }
+                }
+            }
+
+            Debug.Log("==========================");
         }
 
         public void OnShipReadyForInspection()
@@ -98,14 +113,15 @@ namespace Route24.GameOff
 
         public void OnShipExitComplete()
         {
-            StartCoroutine(WaitThenNextShip());
+            if(state == GameplayState.WaitingForShip)
+                StartCoroutine(WaitThenNextShip());
         }
 
         public void StartInspection()
         {
             inspectionActive = true;
-            timer = _shipManager.GetInspectionTimeForCurrentShip();
             state = GameplayState.Inspecting;
+            
             Debug.Log("Inspection started. (Press 1 to Approve, 2 to Decline)");
             
             _eventHub?.Publish(new InspectionStartedEvent(_shipManager.GetCurrentShipProfile()));
@@ -114,41 +130,77 @@ namespace Route24.GameOff
         public void CompleteInspection(bool approved, bool timedOut = false)
         {
             inspectionActive = false;
-            state = GameplayState.WaitingForShip;
+            
+            if(state != GameplayState.DayComplete)
+                state = GameplayState.WaitingForShip;
             
             var ship = _shipManager.GetCurrentShipProfile();
             bool correct = approved == ship.IsValid && !timedOut;
             
             _shipManager.HandleInspectionComplete(timedOut, approved); 
             
-            _eventHub?.Publish(new InspectionCompletedEvent(approved, timedOut, ship));
+            _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship));
         }
 
         private IEnumerator WaitThenNextShip()
         {
+            yield return null;
+            
+            if (state != GameplayState.WaitingForShip)
+                yield break;
+            
             yield return new WaitForSeconds(transitionDelay);
-
-            if (_shipManager.TrySpawnNextShip())
-                state = GameplayState.WaitingForShip;
-            else 
-                EndOfDay();
+            
+            if (state != GameplayState.WaitingForShip)
+                yield break;
+            
+            _shipManager.SpawnNewShip();
+            state = GameplayState.WaitingForShip;
         }
 
         private void EndOfDay()
         {
             state = GameplayState.DayComplete; 
+            StopCoroutine(WaitThenNextShip());
+            StopCoroutine(DayTimeCoroutine());
+            
             Debug.Log($"=== End of Day {currentDay} ===");
             
             _eventHub?.Publish(new DayEndedEvent(currentDay));
             
             currentDay++;
-            StartCoroutine(WaitThenNextDay());
         }
         
-        private IEnumerator WaitThenNextDay()
+        private IEnumerator DayTimeCoroutine()
         {
-            yield return new WaitForSeconds(3f);
-            StartNewDay();
+            yield return new WaitForSeconds(ConstGameStats.DayTime);
+            EndOfDay();
+        }
+        
+        private IEnumerator StartTutorialRoutine()
+        {
+            state = GameplayState.Tutorial;
+            
+            yield return new WaitForSeconds(1.0f);
+            
+            _eventHub?.Publish(new TutorialStartedEvent());
+            
+            while (!_tutorialCompleted)
+                yield return null;
+        }
+
+        public void CompleteTutorial()
+        {
+            if (_tutorialCompleted)
+                return;
+            
+            _tutorialCompleted = true;
+            state = GameplayState.WaitingForShip;
+            
+            _eventHub?.Publish(new LightsPoweredOnEvent(true));
+            _eventHub?.Publish(new TutorialCompletedEvent());
+            
+            StartCoroutine(DelayedStartOfDay());
         }
     }
 }

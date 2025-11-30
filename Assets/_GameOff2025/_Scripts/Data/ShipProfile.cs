@@ -8,8 +8,9 @@ namespace Route24.GameOff
     {
         public string ShipName;
         public List<CargoItem> CargoList;
-        public bool IsValid; // Whether this ship should be approved or not (for testing)
-        public int ShipInspectionTime = 30;
+        public bool IsValid; // Whether this ship should be approved or not 
+        public int ShipInspectionTime = 30; // if -1, no time limit
         public GameObject ShipPrefab;
+        public string EntryCode = "0000";
     }   
 }

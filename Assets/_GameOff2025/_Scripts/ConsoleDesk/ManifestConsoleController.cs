@@ -18,6 +18,9 @@ namespace Route24.GameOff
         [SerializeField] private Transform _shipListContainer;
         [SerializeField] private Transform _bannedListContainer;
         [SerializeField] private GameObject _cargoEntryPrefab;
+        [SerializeField] private TextMeshProUGUI _shipNameText;
+        [SerializeField] private TextMeshProUGUI _shipCodeText;
+        [SerializeField] private CanvasGroup _canvasGroup;
 
         [Header("Scan Settings")]
         [SerializeField] private float _scanRevealDelay = 1f;
@@ -34,6 +37,9 @@ namespace Route24.GameOff
         [SerializeField] private Transform _cameraFocusPoint;
         [SerializeField] private Transform _cameraLookTarget;
         [SerializeField] private float _focusFOV = 40f;
+        
+        [Header("Tutorial Settings")]
+        [SerializeField] private ShipProfileSO _tutorialShipProfile;
 
         private List<CargoEntryUI> _shipEntries = new();
         private List<CargoItem> _bannedItems = new();
@@ -53,8 +59,11 @@ namespace Route24.GameOff
             _manifestManager = ServiceLocator.Get<CargoManifestManager>();
             _gameManager = ServiceLocator.Get<GameManager>();
 
-            _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
-            _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            // _eventHub.Subscribe<LeverActivatedEvent>(OnLeverOn);
+            // _eventHub.Subscribe<LeverDeactivatedEvent>(OnLeverOff);
+            
+            _eventHub.Subscribe<Tutorial_OnInspectionStartedEvent>(OnTutorialStartInspection);
+            _eventHub.Subscribe<TutorialCompletedEvent>(OnStartup);
             _eventHub.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionEnded);
             _eventHub.Subscribe<BannedCargoGeneratedEvent>(OnBannedListGenerated);
@@ -71,8 +80,26 @@ namespace Route24.GameOff
 
             if (_highlightBackground)
                 _highlightBackground.color = _defaultColor;
+            
+            _canvasGroup.alpha = 0f;
         }
-        
+
+        private void OnTutorialStartInspection(Tutorial_OnInspectionStartedEvent obj)
+        {
+            ClearShipList();
+            ServiceLocator.Get<CargoManifestManager>().GenerateDailyBannedList(0);
+            _currentShip = _tutorialShipProfile.Profile;
+            PopulateShipList(_currentShip.CargoList);
+            PopulateShipDetails(false);
+            _canvasGroup.alpha = 1f;
+        }
+
+        private void OnStartup(TutorialCompletedEvent obj)
+        {
+            ClearShipList();
+            _canvasGroup.alpha = 1f;
+        }
+
         // ─────────────────────────────────────────────
         // Events
         // ─────────────────────────────────────────────
@@ -80,6 +107,8 @@ namespace Route24.GameOff
         private void OnInspectionStarted(InspectionStartedEvent evt)
         {
             _currentShip = evt.Ship;
+            PopulateShipList(_currentShip.CargoList);
+            PopulateShipDetails();
         }
         
         private void OnInspectionEnded(InspectionCompletedEvent evt)
@@ -165,12 +194,38 @@ namespace Route24.GameOff
             _currentIndex = 0;
             UpdateHighlight();
         }
+        
+        private void PopulateShipDetails(bool mask = true)
+        {
+            string shipCode = _currentShip.EntryCode;
+            
+            // 50% chance to mask ONE character
+            // We should add this percentage to our ship configs? idk
+            if (mask && Random.value < 0.3f)
+            {
+                if (!string.IsNullOrEmpty(shipCode))
+                {
+                    int index = Random.Range(0, shipCode.Length);
+
+                    char[] chars = shipCode.ToCharArray();
+                    chars[index] = '*';
+
+                    shipCode = new string(chars);
+                }
+            }
+            
+            _shipNameText.text = "SHIP: " + _currentShip.ShipName;
+            _shipCodeText.text = "CODE: " + shipCode;
+        }
 
         private void ClearShipList()
         {
             foreach (Transform child in _shipListContainer)
                 Destroy(child.gameObject);
             _shipEntries.Clear();
+            
+            _shipCodeText.text = "";
+            _shipNameText.text = "";
             
             UpdateHighlight();
         }
@@ -266,6 +321,11 @@ namespace Route24.GameOff
                 _highlightBackground.color = _defaultColor;
 
             _isScanning = false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                _eventHub?.Publish(new Tutorial_OnCargoScannedEvent());
+            }
         }
 
         private IEnumerator FlashBackground(Color flashColor)
@@ -301,6 +361,12 @@ namespace Route24.GameOff
                 _highlightBar.gameObject.SetActive(true);
 
             UpdateHighlight();
+            
+            // Tutorial related
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                _eventHub?.Publish(new Tutorial_OnCargoFocusedEvent());
+            }
         }
 
         public void ExitFocus()
@@ -337,16 +403,52 @@ namespace Route24.GameOff
 
         public bool CanInteract()
         {
-            return !_inFocus && !_recentlyExited && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            if (_recentlyExited) 
+                return false;
+            
+            if (_inFocus || !_gameManager)
+                return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                if (TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted) &&
+                    !TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool CanShowMessage()
         {
-            return !_inFocus && _gameManager && _gameManager.CurrentGameplayState == GameplayState.Inspecting;
+            if (_inFocus || !_gameManager)
+                return false;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Inspecting)
+                return true;
+
+            if (_gameManager.CurrentGameplayState == GameplayState.Tutorial)
+            {
+                if (TutorialController.Instance.IsStepCompleted(TutorialStep.InspectionStarted) &&
+                    !TutorialController.Instance.IsStepCompleted(TutorialStep.CargoEntryScanned))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void OnInteract()
         {
+            if (_recentlyExited) 
+                return;
+            
             if (_inFocus)
                 ExitFocus();
             else
