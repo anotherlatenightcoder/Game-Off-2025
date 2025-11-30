@@ -111,13 +111,16 @@ namespace Route24.GameOff
             _transactionsList.Add(Transactions.GetSavings(CurrencyAmount));
         }
         
-        private void OnInspectionCompleted(InspectionCompletedEvent eventData)
+        private void OnInspectionCompleted(InspectionCompletedEvent e)
         {
-            if(eventData.Approved)
-                if(eventData.Ship.IsValid)
-                    AddTransaction(Transactions.GetApprovalSalary());
-                else
-                    AddTransaction(Transactions.GetWrongApprovalPenalty());
+            bool correctApproval = e.Approved && e.Ship.IsValid;
+            bool correctDecline  = !e.Approved && !e.Ship.IsValid;
+
+            bool correct = correctApproval || correctDecline;
+
+            AddTransaction(correct
+                ? Transactions.GetApprovalSalary()
+                : Transactions.GetWrongApprovalPenalty());
         }
 
         private TimeStamp GetTimeStamp()
