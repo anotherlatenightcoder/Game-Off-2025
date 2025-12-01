@@ -185,6 +185,8 @@ namespace Route24.GameOff
                 RefreshUI();
                 HighlightFirstValidItem();
                 AudioManager.Instance.PlaySFX("CARGO_CONFIRM");
+
+                WaveGameStats.Instance.TrackUpgrade(data, ServiceLocator.Get<GameManager>().currentDay);
             }
         }
     }

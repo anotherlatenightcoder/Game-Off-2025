@@ -151,6 +151,11 @@ namespace Route24.GameOff
 
         private IEnumerator CompleteTutorialNow(bool instant)
         {
+            if (instant)
+            {
+                WaveGameStats.Instance.MarkTutorialSkipped();
+            }
+            
             yield return new WaitForSeconds(1f);
             // I've added the instant flag because when we skip the tutorial,
             // we want to instantly turn everything on. Currently there is a bug if

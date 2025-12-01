@@ -43,6 +43,8 @@ namespace Route24.GameOff
                 CurrencyAmount -= transaction.Amount;
             
             _eventHub?.Publish(new TransactionAddedEvent(transaction));
+
+            WaveGameStats.Instance.TrackTransaction(transaction, ServiceLocator.Get<GameManager>().currentDay);
         }
 
         public void AddCurrency(int amount, string reason)
@@ -77,6 +79,8 @@ namespace Route24.GameOff
             Debug.Log($"[CurrencyManager] Removed {transaction.Amount} from currency, new currency: {CurrencyAmount}");
             
             _eventHub?.Publish(new TransactionAddedEvent(transaction));
+            
+            WaveGameStats.Instance.TrackTransaction(transaction, ServiceLocator.Get<GameManager>().currentDay);
         }
         
         public bool TryRemoveCurrency(int amount, string reason)
@@ -113,6 +117,14 @@ namespace Route24.GameOff
         
         private void OnInspectionCompleted(InspectionCompletedEvent e)
         {
+            ShipController controller = ServiceLocator.Get<ShipManager>().GetCurrentShipController();
+            
+            if (!controller.PlayerChoseInspection)
+            {
+                Debug.Log("[CurrencyManager] No penalty or reward — ship was not inspected by player.");
+                return;
+            }
+            
             bool correctApproval = e.Approved && e.Ship.IsValid;
             bool correctDecline  = !e.Approved && !e.Ship.IsValid;
 

@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
+using Route24.Core;
 
 namespace Route24.GameOff
 {
@@ -25,8 +26,8 @@ namespace Route24.GameOff
         [SerializeField] private float autoUploadInterval = 60f;
         [SerializeField] private TextMeshProUGUI sessionText;
         
-        private const string apiUrl = "#";
-        private const string authToken = "#";
+        private const string apiUrl = "";
+        private const string authToken = "";
 
         private string sessionId;
         private bool sessionStarted = false;
@@ -100,7 +101,7 @@ namespace Route24.GameOff
                 UploadUpdate();
             }
         }
-        
+
         // Public endpoints - stuff we call from other scripts,
         // however I'm still conflicted if we
         public void MarkTutorialSkipped()
@@ -141,26 +142,32 @@ namespace Route24.GameOff
             MarkDirty();
         }
         
-        public void TrackUpgrade(string upgradeName, int day)
+        public void TrackUpgrade(UpgradeData upgrade, int day)
         {
             upgradesBought.Add(new Dictionary<string, object>
             {
                 { "timestamp", DateTime.UtcNow.ToString("o") },
                 { "day", day },
-                { "upgrade", upgradeName }
+                { "upgrade_baseid", upgrade.BaseId },
+                { "upgrade_category", upgrade.Category },
+                { "upgrade_name", upgrade.ExpenseName },
+                { "upgrade_tier", upgrade.Tier },
+                { "upgrade_cost", upgrade.Cost }
             });
 
             MarkDirty();
         }
 
-        public void TrackTransaction(string type, int amount, int day)
+        public void TrackTransaction(Transaction ta, int day)
         {
             transactions.Add(new Dictionary<string, object>
             {
                 { "timestamp", DateTime.UtcNow.ToString("o") },
                 { "day", day },
-                { "type", type },
-                { "amount", amount }
+                { "type", ta.Type },
+                { "amount", ta.Amount },
+                { "reason", ta.Reason },
+                { "ta_timestamp", ta.TimeStamp }
             });
 
             MarkDirty();

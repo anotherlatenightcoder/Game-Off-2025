@@ -41,7 +41,10 @@ namespace Route24.GameOff
             _cargoManifestManager = ServiceLocator.Get<CargoManifestManager>();
             _eventHub = ServiceLocator.Get<EventHub>();
             
+            _eventHub.Subscribe<InspectionStartedEvent>(OnInspectionStarted);
+            _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionEnded);
             _eventHub.Subscribe<DayEndedEvent>(OnDayEnded);
+            _eventHub.Subscribe<DayStartedEvent>(OnDayStarted);
         }
 
         public void RegisterSceneWaypoints(Transform spawn, Transform dock, Transform exit, Transform sink)
@@ -75,6 +78,8 @@ namespace Route24.GameOff
             Debug.Log($"[GameManager] {_currentShipProfile.ShipName} ready for inspection.");
             _gameManager.OnShipReadyForInspection();
             _eventHub?.Publish(new ShipArrivedForInspectionEvent(currentShipIndex, _currentShipProfile));
+            
+            WaveGameStats.Instance.TrackShipReceived();
         }
         
         public void SpawnNewShip()
@@ -119,6 +124,7 @@ namespace Route24.GameOff
             {
                 Debug.Log($"[ShipManager] Timed out on {_currentShipProfile.ShipName} — sinking ship.");
                 _currentShipController?.Sink();
+                WaveGameStats.Instance.TrackShipSunk();
             }
             else if (approved)
             {
@@ -134,6 +140,7 @@ namespace Route24.GameOff
         }
         
         public ShipProfile GetCurrentShipProfile() => _currentShipProfile;
+        public ShipController GetCurrentShipController() => _currentShipController;
 
         private void SetShipProfilesFromDayConfig(DayConfig dayConfig)
         {
@@ -182,11 +189,47 @@ namespace Route24.GameOff
 
             return Random.Range(25, 35);
         }
+        
+        private void OnInspectionStarted(InspectionStartedEvent evt)
+        {
+            if (_currentShipController != null)
+            {
+                _currentShipController.MarkPlayerChoseInspection();
+                Debug.Log("[ShipManager] Player chose to inspect this ship.");
+            }
+        }
+        
+        private void OnInspectionEnded(InspectionCompletedEvent evt)
+        {
+            if (_currentShipController != null)
+                _currentShipController.ResetInspectionFlag();
+        }
+        
+        private void OnDayStarted(DayStartedEvent evt)
+        {
+            if (_currentShipController != null)
+                _currentShipController.ResetInspectionFlag();
+        }
 
         private void OnDayEnded(DayEndedEvent obj)
         {
-            if(_currentShipController)
+            if (_currentShipController == null)
+                return;
+
+            if (_currentShipController.PlayerChoseInspection)
+            {
+                // Player is responsible because they chose to inspect it
+                // So we penalise them financially
                 _currentShipController.Decline();
+            }
+            else
+            {
+                // Auto-decline — the ship was never inspected
+                Debug.Log("[ShipManager] Ship auto-declined because day ended BEFORE player inspected. No penalties.");
+                
+                _currentShipController.ResetInspectionFlag();
+                _currentShipController.Decline();
+            }
         }
     }
 }
