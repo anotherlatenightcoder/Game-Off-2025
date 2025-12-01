@@ -196,7 +196,7 @@ namespace Route24.GameOff
         {
             int income = GetIncomeTotal();
             int expense = GetExpenseTotal();
-            int balance = income + expense;
+            int balance = income - expense;
 
             _incomeTotalText.text = $"${income}";
             _expenseTotalText.text = $"${expense}";
