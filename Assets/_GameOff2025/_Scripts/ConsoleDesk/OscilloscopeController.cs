@@ -151,6 +151,8 @@ namespace Route24.GameOff
 
             if (state)
             {
+                WaveGameStats.Instance.BeginWaveMinigame();
+                
                 _cameraController.FocusOn(_cameraFocusPoint, _cameraLookTarget, _focusFOV);
                 _waveformRenderer.SetMatchUIVisible(true);
 
@@ -166,6 +168,8 @@ namespace Route24.GameOff
             }
             else
             {
+                WaveGameStats.Instance.EndWaveMinigame();
+                
                 _focusCooldownActive = true;
                 _cameraController.ReturnToDefault();
                 Cursor.lockState = CursorLockMode.Locked;

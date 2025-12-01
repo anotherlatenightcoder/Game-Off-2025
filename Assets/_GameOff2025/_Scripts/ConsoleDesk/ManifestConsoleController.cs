@@ -394,6 +394,8 @@ namespace Route24.GameOff
         private IEnumerator ScanRoutine(CargoEntryUI entry)
         {
             _isScanning = true;
+
+            WaveGameStats.Instance.TrackCargoScanned();
             
             AudioManager.Instance.PlaySFX("CARGO_CONFIRM");
 

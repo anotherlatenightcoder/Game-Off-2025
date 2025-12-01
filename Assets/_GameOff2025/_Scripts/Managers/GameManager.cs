@@ -60,6 +60,8 @@ namespace Route24.GameOff
             
             Debug.Log($"=== Starting Day {currentDay} ===");
             
+            WaveGameStats.Instance.MarkDayStart(currentDay);
+            
             AudioManager.Instance.PlaySFX("DAY_START");
             state = GameplayState.WaitingForShip;
             
@@ -100,6 +102,8 @@ namespace Route24.GameOff
             _shipManager.HandleInspectionComplete(timedOut, approved); 
             
             _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship));
+            
+            WaveGameStats.Instance.TrackShipOutcome(approved, correct);
         }
 
         private IEnumerator WaitThenNextShip()
@@ -123,6 +127,8 @@ namespace Route24.GameOff
             state = GameplayState.DayComplete; 
             StopCoroutine(WaitThenNextShip());
             StopCoroutine(DayTimeCoroutine());
+            
+            WaveGameStats.Instance.MarkDayEnd(currentDay);
             
             Debug.Log($"=== End of Day {currentDay} ===");
             

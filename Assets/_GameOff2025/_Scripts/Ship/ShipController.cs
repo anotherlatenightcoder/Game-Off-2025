@@ -16,6 +16,8 @@ namespace Route24.GameOff
         [SerializeField] private float _bobAmplitude = 0.05f;
         [SerializeField] private float _bobFrequency = 1.5f;
         [SerializeField] private float _bobRotation = 2f;
+        
+        public bool PlayerChoseInspection { get; private set; } = false;
 
         private Transform _spawnPoint;
         private Transform _dockPoint;
@@ -38,6 +40,16 @@ namespace Route24.GameOff
             _dockPoint = dock;
             _exitPoint = exit;
             _sinkPoint = sink;
+        }
+        
+        public void MarkPlayerChoseInspection()
+        {
+            PlayerChoseInspection = true;
+        }
+
+        public void ResetInspectionFlag()
+        {
+            PlayerChoseInspection = false;
         }
         
         public void MoveToDock()

@@ -96,6 +96,7 @@ namespace Route24.GameOff
                 _lights.FlashRed();
                 _keypadUI.ResetDisplay();
                 AudioManager.Instance.PlaySFX("KEYPAD_FAILURE");
+                WaveGameStats.Instance.TrackKeypadIncorrect();
             }
 
             ResetCode();
