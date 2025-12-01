@@ -157,14 +157,16 @@ namespace Route24.Core
         public bool Approved;
         public bool Valid;
         public bool TimedOut;
+        public bool PlayerTriggered;
         public ShipProfile Ship;
 
-        public InspectionCompletedEvent(bool approved, bool valid, bool timedOut, ShipProfile ship)
+        public InspectionCompletedEvent(bool approved, bool valid, bool timedOut, ShipProfile ship, bool playerTriggered)
         {
             Approved = approved;
             Valid = valid;
             TimedOut = timedOut;
             Ship = ship;
+            PlayerTriggered = playerTriggered;
         }
     }
     

@@ -19,6 +19,8 @@ namespace Route24.GameOff
         public List<Transaction> GetRegularExpenses => _regularExpenseList;
         public List<TransactionOption> GetExpenseOptions => _expenseOptions;
         
+        private ShipManager _shipManager;
+        
         
         EventHub _eventHub;
 
@@ -26,6 +28,8 @@ namespace Route24.GameOff
         {
             _eventHub = ServiceLocator.Get<EventHub>();
             _eventHub.Subscribe<InspectionCompletedEvent>(OnInspectionCompleted);
+            
+            _shipManager = ServiceLocator.Get<ShipManager>();
             CurrencyAmount = 5;
         }
 
@@ -117,9 +121,7 @@ namespace Route24.GameOff
         
         private void OnInspectionCompleted(InspectionCompletedEvent e)
         {
-            ShipController controller = ServiceLocator.Get<ShipManager>().GetCurrentShipController();
-            
-            if (!controller.PlayerChoseInspection)
+            if (!e.PlayerTriggered)
             {
                 Debug.Log("[CurrencyManager] No penalty or reward — ship was not inspected by player.");
                 return;

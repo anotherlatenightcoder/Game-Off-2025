@@ -126,7 +126,7 @@ namespace Route24.GameOff
                 return;
             }
             
-            _gameManager?.CompleteInspection(true);
+            _gameManager?.CompleteInspection(true, false, true);
         }
 
         private void Activate()

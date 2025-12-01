@@ -89,7 +89,7 @@ namespace Route24.GameOff
             _eventHub?.Publish(new InspectionStartedEvent(_shipManager.GetCurrentShipProfile()));
         }
 
-        public void CompleteInspection(bool approved, bool timedOut = false)
+        public void CompleteInspection(bool approved, bool timedOut = false, bool playerTriggered = false)
         {
             inspectionActive = false;
             
@@ -100,8 +100,7 @@ namespace Route24.GameOff
             bool correct = approved == ship.IsValid && !timedOut;
             
             _shipManager.HandleInspectionComplete(timedOut, approved); 
-            
-            _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship));
+            _eventHub?.Publish(new InspectionCompletedEvent(approved, correct, timedOut, ship, playerTriggered));
             
             WaveGameStats.Instance.TrackShipOutcome(approved, correct);
         }
