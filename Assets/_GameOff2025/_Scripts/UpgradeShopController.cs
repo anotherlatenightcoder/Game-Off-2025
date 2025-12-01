@@ -59,24 +59,24 @@ namespace Route24.GameOff
         private void LoadAllUpgrades()
         {
             // Keypad
-            AddUpgrade("Keypad", "Keypad", 1, 15, "Automatically decodes a scrambled code after 10 seconds.", "Keypad 10s decode");
-            AddUpgrade("Keypad", "Keypad", 2, 30, "All codes are automatically decoded by default.", "Keypad Instant decode");
+            AddUpgrade("Keypad", "Keypad", 1, 20, "Automatically decodes a scrambled code after 10 seconds.", "Keypad 10s decode");
+            AddUpgrade("Keypad", "Keypad", 2, 40, "All codes are automatically decoded by default.", "Keypad Instant decode");
 
             // Oscillator – multiple upgrade lines inside same category
-            AddUpgrade("Osc_MatchTime", "Oscillator", 1, 10, "Reduces signal match time by 1.5 seconds.", "Reduced signal match 1.5s");
-            AddUpgrade("Osc_MatchTime", "Oscillator", 2, 15, "Reduces signal match time by 3 seconds.", "Reduced signal match 3.0s");
+            AddUpgrade("Osc_MatchTime", "Oscillator", 1, 15, "Reduces signal match time by 1.5 seconds.", "Reduced signal match 1.5s");
+            AddUpgrade("Osc_MatchTime", "Oscillator", 2, 25, "Reduces signal match time by 3 seconds.", "Reduced signal match 3.0s");
 
-            AddUpgrade("Osc_MatchPerc", "Oscillator", 1, 10, "Reduce match percentage needed by 10%.", "Reduced matched percentage 10%");
-            AddUpgrade("Osc_MatchPerc", "Oscillator", 2, 15, "Reduce match percentage needed by 20%.", "Reduced matched percentage 20%");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 1, 15, "Reduce match percentage needed by 10%.", "Reduced matched percentage 10%");
+            AddUpgrade("Osc_MatchPerc", "Oscillator", 2, 25, "Reduce match percentage needed by 20%.", "Reduced matched percentage 20%");
 
-            AddUpgrade("Osc_Random", "Oscillator", 1, 30, "Removes any random interference signals.", "Disable random interference");
+            AddUpgrade("Osc_Random", "Oscillator", 1, 45, "Removes any random interference signals.", "Disable random interference");
 
             // Cargo
-            AddUpgrade("Cargo", "Cargo", 1, 10, "Reduce scan time by 1 second.", "Reduced scan time by 1s");
-            AddUpgrade("Cargo", "Cargo", 2, 15, "Reduce scan time by 2 seconds.", "Reduced scan time by 2s");
+            AddUpgrade("Cargo", "Cargo", 1, 15, "Reduce scan time by 1 second.", "Reduced scan time by 1s");
+            AddUpgrade("Cargo", "Cargo", 2, 25, "Reduce scan time by 2 seconds.", "Reduced scan time by 2s");
 
-            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 15, "Automatically scans items one for one.", "Cargo auto scan");
-            AddUpgrade("Cargo_AutoScan", "Cargo", 2, 10, "Automatically scans all items together.", "Cargo async scan");
+            AddUpgrade("Cargo_AutoScan", "Cargo", 1, 35, "Automatically scans items one for one.", "Cargo auto scan");
+            AddUpgrade("Cargo_AutoScan", "Cargo", 2, 50, "Automatically scans all items together.", "Cargo async scan");
         }
 
         /// <summary>
