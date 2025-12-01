@@ -67,6 +67,6 @@ namespace Route24.Core
         /// <summary>
         /// Clears all registered listeners (used on cleanup or scene reloads).
         /// </summary>
-        public void Clear() => _eventTable.Clear();
+        public static void Clear() => _eventTable.Clear();
     }
 }
